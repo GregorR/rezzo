@@ -42,15 +42,16 @@
 World *newWorld(int w, int h)
 {
     World *ret;
-    size_t wsz;
     int x, y, yoff, i;
 
     /* allocate it */
-    wsz = sizeof(World) + (sizeof(Cell)*(w*h)*2);
-    SF(ret, malloc, NULL, (wsz));
-    memset(ret, 0, wsz);
+    SF(ret, malloc, NULL, (sizeof(World)));
     ret->w = w;
     ret->h = h;
+    SF(ret->d, malloc, NULL, (sizeof(Cell)*w*h*2));
+    memset(ret->d, 0, sizeof(Cell)*w*h*2);
+    SF(ret->damage, malloc, NULL, (w*h));
+    memset(ret->damage, 0, w*h);
 
     /* set up the cells */
     for (y = 0, yoff = 0; y < h; y++, yoff += w) {
@@ -70,18 +71,20 @@ World *newWorld(int w, int h)
 void randWorld(World *world)
 {
     int w, h, tod, d, x, y, i, dx, dy;
+    int nextT;
     w = world->w;
     h = world->h;
     tod = w*h/8;
 
     x = y = dx = dy = 0;
+    nextT = 0;
 
     /* first build the substrate */
     for (d = 0; d < tod; d++) {
         i = y*w+x;
         if (world->d[i].type != CELL_NONE) {
             if (world->d[i].type != CELL_BOUNDARY)
-                world->d[i].type = CELL_NONE;
+                world->d[i].type = CELL_UNKNOWN;
             x = random() % (w/4) * 4;
             y = random() % (h/4) * 4;
             dx = dy = 0;
@@ -98,6 +101,14 @@ void randWorld(World *world)
 
         x += dx;
         y += dy;
+    }
+
+    /* fix all the left unknowns */
+    for (y = 0, dy = 0; y < h; y++, dy += w) {
+        for (x = 0, i = dy; x < w; x++, i++) {
+            if (world->d[i].type == CELL_UNKNOWN)
+                world->d[i].type = CELL_NONE;
+        }
     }
 
     /* then add the loops */
@@ -170,7 +181,7 @@ void updateCell(const Cell *top, const Cell *middle, const Cell *bottom, Cell *i
         int flags;
 
         /* check for electrons/flags in the neighborhood */
-        neigh.type = neigh.owner = neigh.damage = 0;
+        neigh.type = neigh.owner = 0;
         flags = 0;
         for (i = 0; i < 9; i++) {
             if (neighborhood[i].type == CELL_ELECTRON && !flags) {
@@ -216,27 +227,44 @@ void updateCell(const Cell *top, const Cell *middle, const Cell *bottom, Cell *i
 }
 
 /* update the whole world */
-void updateWorld(World *world)
+void updateWorld(World *world, int iter)
 {
-    int x, y, yoff, i, w, h, wh;
+    int x, y, yoff, i, w, h, wh, prime, copybuf;
     w = world->w;
     h = world->h;
     wh = w * h;
 
-    for (y = 0, yoff = 0; y < h-1; y++, yoff += w) {
-        for (x = 0, i = yoff; x < w-1; x++, i++) {
-            if (x == 0 || x == w-1 || y == 0 || y == h-1) {
-                /* just copy barriers */
-                world->d[wh+i] = world->d[i];
+    prime = 0;
+    copybuf = wh;
 
-            } else {
-                /* real update */
-                updateCell(world->d + i - w - 1, world->d + i - 1, world->d + i + w - 1, world->d + wh + i);
+    while (iter--) {
+        for (y = 0, yoff = 0; y < h-1; y++, yoff += w) {
+            for (x = 0, i = yoff; x < w-1; x++, i++) {
+                if (x == 0 || x == w-1 || y == 0 || y == h-1) {
+                    /* just copy barriers */
+                    world->d[copybuf+i] = world->d[prime+i];
 
+                } else {
+                    /* real update */
+                    updateCell(world->d + prime + i - w - 1,
+                               world->d + prime + i - 1,
+                               world->d + prime + i + w - 1,
+                               world->d + copybuf + i);
+
+                }
             }
+        }
+
+        if (prime == 0) {
+            prime = wh;
+            copybuf = 0;
+        } else {
+            prime = 0;
+            copybuf = wh;
         }
     }
 
     /* then copy the buf in place */
-    memcpy(world->d, world->d + wh, sizeof(Cell) * wh);
+    if (prime != 0)
+        memcpy(world->d, world->d + wh, sizeof(Cell) * wh);
 }

@@ -21,12 +21,13 @@ typedef struct _Cell Cell;
 typedef struct _World World;
 
 struct _Cell {
-    unsigned char type, owner, damage;
+    unsigned char type, owner;
 };
 
 struct _World {
     int w, h;
-    Cell d[1];
+    Cell *d;
+    unsigned char *damage;
 };
 
 enum CellTypes {
@@ -52,6 +53,6 @@ void randWorld(World *world);
 void updateCell(const Cell *top, const Cell *middle, const Cell *bottom, Cell *into);
 
 /* update the whole world */
-void updateWorld(World *world);
+void updateWorld(World *world, int iter);
 
 #endif

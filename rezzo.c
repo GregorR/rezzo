@@ -65,7 +65,7 @@ void drawWorld(World *world, SDL_Surface *buf, int z)
 
 void tick(World *world, SDL_Surface *buf, int z)
 {
-    updateWorld(world);
+    updateWorld(world, 10);
     drawWorld(world, buf, z);
 }
 
