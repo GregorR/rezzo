@@ -39,7 +39,7 @@ enum CellTypes {
     CELL_ELECTRON,
     CELL_ELECTRON_TAIL,
     CELL_FLAG,
-    CELL_FLAG_TAIL,
+    CELL_FLAG_GEYSER,
     CELL_TYPE_COUNT
 };
 

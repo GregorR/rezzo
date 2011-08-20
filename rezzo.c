@@ -16,6 +16,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include <SDL.h>
 
@@ -65,7 +68,7 @@ void drawWorld(World *world, SDL_Surface *buf, int z)
 
 void tick(World *world, SDL_Surface *buf, int z)
 {
-    updateWorld(world, 10);
+    updateWorld(world, 1);
     drawWorld(world, buf, z);
 }
 
@@ -84,24 +87,36 @@ void initColors(SDL_Surface *buf)
     COL(ELECTRON, 255, 255, 0);
     COL(ELECTRON_TAIL, 127, 127, 0);
     COL(FLAG, 255, 255, 255);
-    COL(FLAG_TAIL, 127, 127, 127);
+    COL(FLAG_GEYSER, 255, 255, 255);
 #undef COL
 }
 
 int main(int argc, char **argv)
 {
-    int w, h, z;
+    int w, h, z, r;
     SDL_Surface *buf;
     SDL_Event ev;
     World *world;
 
-    if (argc != 4) {
-        fprintf(stderr, "Use: rezzo <w> <h> <z>\n");
+    if (argc < 4) {
+        fprintf(stderr, "Use: rezzo <w> <h> <z> [random seed]\n");
         exit(1);
     }
     w = atoi(argv[1]);
     h = atoi(argv[2]);
     z = atoi(argv[3]);
+
+    if (argc > 4) {
+        r = atoi(argv[4]);
+    } else {
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        r = tv.tv_sec ^ tv.tv_usec ^ getpid();
+        srandom(r);
+        r = random();
+    }
+    fprintf(stderr, "Random seed: %d\n", r);
+    srandom(r);
 
     /* make our world */
     world = newWorld(w, h);

@@ -35,7 +35,7 @@
    case CELL_ELECTRON:
    case CELL_ELECTRON_TAIL:
    case CELL_FLAG:
-   case CELL_FLAG_TAIL:
+   case CELL_FLAG_GUYSER:
 */
 
 /* allocate a world */
@@ -67,17 +67,47 @@ World *newWorld(int w, int h)
     return ret;
 }
 
+/* build an electron loop */
+int buildLoop(World *world, int x, int y, int w, int h)
+{
+    int sx, sy, yoff, i;
+    w += x;
+    h += y;
+
+    if (x < 2 || y < 2 || w > world->w - 2 || h > world->h - 2) return 0;
+
+    /* clear the substrate */
+    for (sy = y-1, yoff = (y-1)*world->w; sy <= h; sy++, yoff += world->w) {
+        for (sx = x-1, i = yoff+x-1; sx <= w; sx++, i++) {
+            world->d[i].type = CELL_NONE;
+        }
+    }
+
+    /* build the loop */
+    for (sx = x + 1, i = y*world->w+x+1; sx < w - 1; sx++, i++)
+        world->d[i].type = CELL_CONDUCTOR;
+    for (sy = y + 1, i = (y+1)*world->w+x; sy < h - 1; sy++, i += world->w)
+        world->d[i].type = CELL_CONDUCTOR;
+    for (sy = y + 1, i = (y+1)*world->w+w-1; sy < h - 1; sy++, i += world->w)
+        world->d[i].type = CELL_CONDUCTOR;
+    for (sx = x + 1, i = (h-1)*world->w+x+1; sx < w - 1; sx++, i++)
+        world->d[i].type = CELL_CONDUCTOR;
+
+    /* and the electron */
+    world->d[y*world->w+x+1].type = CELL_ELECTRON;
+    world->d[(y+1)*world->w+x].type = CELL_ELECTRON_TAIL;
+    return 1;
+}
+
 /* randomize a world */
 void randWorld(World *world)
 {
     int w, h, tod, d, x, y, i, dx, dy;
-    int nextT;
     w = world->w;
     h = world->h;
     tod = w*h/8;
 
     x = y = dx = dy = 0;
-    nextT = 0;
 
     /* first build the substrate */
     for (d = 0; d < tod; d++) {
@@ -111,28 +141,14 @@ void randWorld(World *world)
         }
     }
 
-    /* then add the loops */
+    /* then build the loops */
     tod = w*h/1024;
     for (d = 0; d < tod; d++) {
-        x = random() % (w-8) + 1;
-        y = random() % (h-8) + 1;
-
-        /* clear the area */
-        for (dy = y; dy < y + 7; dy++) {
-            for (dx = x; dx < x + 7; dx++) {
-                world->d[dy*w+dx].type = CELL_NONE;
-            }
-        }
-
-        /* draw the loop */
-        world->d[(y+1)*w+x+2].type = CELL_ELECTRON;
-        world->d[(y+1)*w+x+3].type = CELL_CONDUCTOR;
-        world->d[(y+2)*w+x+1].type = CELL_ELECTRON_TAIL;
-        world->d[(y+2)*w+x+4].type = CELL_CONDUCTOR;
-        world->d[(y+3)*w+x+1].type = CELL_CONDUCTOR;
-        world->d[(y+3)*w+x+4].type = CELL_ELECTRON_TAIL;
-        world->d[(y+4)*w+x+2].type = CELL_CONDUCTOR;
-        world->d[(y+4)*w+x+3].type = CELL_ELECTRON;
+        x = random() % w;
+        y = random() % h;
+        dx = random() % 6 + 4;
+        dy = random() % 6 + 4;
+        if (!buildLoop(world, x, y, dx, dy)) d--;
     }
 }
 
@@ -148,21 +164,12 @@ void updateCell(const Cell *top, const Cell *middle, const Cell *bottom, Cell *i
         /* complex cases: */
         case CELL_CONDUCTOR_POTENTIA:
         case CELL_CONDUCTOR:
+        case CELL_ELECTRON:
         case CELL_FLAG:
             break;
 
-        /* simple cases: */
-        case CELL_ELECTRON:
-            into->type = CELL_ELECTRON_TAIL;
-            return;
-
         case CELL_ELECTRON_TAIL:
             into->type = CELL_CONDUCTOR;
-            return;
-
-        case CELL_FLAG_TAIL:
-            into->type = CELL_CONDUCTOR;
-            into->owner = 0;
             return;
 
         default:
@@ -177,51 +184,44 @@ void updateCell(const Cell *top, const Cell *middle, const Cell *bottom, Cell *i
     neighborhood[4].type = CELL_NONE;
 
     if (self.type == CELL_CONDUCTOR_POTENTIA || self.type == CELL_CONDUCTOR) {
-        Cell neigh;
-        int flags;
-
-        /* check for electrons/flags in the neighborhood */
-        neigh.type = neigh.owner = 0;
-        flags = 0;
+        /* check for electrons in the neighborhood */
         for (i = 0; i < 9; i++) {
-            if (neighborhood[i].type == CELL_ELECTRON && !flags) {
-                neigh.type = CELL_ELECTRON;
-            }
-            if (neighborhood[i].type == CELL_FLAG) {
-                if (neigh.type == CELL_FLAG) {
-                    if (neigh.owner != neighborhood[i].owner)
-                        flags++;
-                } else {
-                    flags++;
-                    neigh.type = CELL_FLAG;
-                    neigh.owner = neighborhood[i].owner;
-                }
-            }
+            if (neighborhood[i].type == CELL_ELECTRON) break;
         }
-        if (flags > 1) {
-            fprintf(stderr, "Demotion!\n");
-            neigh.type = CELL_ELECTRON;
-            neigh.owner = 0;
-        }
+        if (i < 9)
+            into->type = self.type + 1;
 
-        if (neigh.type != 0) {
-            if (self.type == CELL_CONDUCTOR_POTENTIA) {
-                into->type = CELL_CONDUCTOR;
-            } else {
-                into->type = neigh.type;
-                into->owner = neigh.owner;
+    } else if (self.type == CELL_ELECTRON) {
+        /* check neighborhood for flags */
+        unsigned char owner = 0;
+        for (i = 0; i < 9; i++) {
+            if (neighborhood[i].type == CELL_FLAG) {
+                if (owner != 0 && neighborhood[i].owner != owner)
+                    break;
+                owner = neighborhood[i].owner;
             }
+        }
+        if (i == 9 && owner != 0) {
+            /* become a flag */
+            into->type = CELL_FLAG;
+            into->owner = owner;
+        } else {
+            /* just dissipate */
+            into->type = CELL_ELECTRON_TAIL;
         }
 
     } else if (self.type == CELL_FLAG) {
-        /* check for conductors in the neighborhood */
+        /* check for electrons in the neighborhood */
         for (i = 0; i < 9; i++) {
-            if (neighborhood[i].type == CELL_CONDUCTOR)
+            if (neighborhood[i].type == CELL_ELECTRON)
                 break;
         }
 
-        if (i < 9)
-            into->type = CELL_FLAG_TAIL;
+        if (i < 9) {
+            /* OK, we can dissipate */
+            into->type = CELL_CONDUCTOR;
+            into->owner = 0;
+        }
 
     }
 }
