@@ -164,6 +164,9 @@ void initColors(SDL_Surface *buf)
     COL(CONDUCTOR, 127, 127, 127);
     COL(ELECTRON, 255, 255, 0);
     COL(ELECTRON_TAIL, 127, 127, 0);
+
+    /* these will all be colored by the player-coloring step */
+    COL(AGENT, 255, 255, 255);
     COL(FLAG_GEYSER, 255, 255, 255);
     COL(BASE, 255, 255, 255);
 #undef COL
