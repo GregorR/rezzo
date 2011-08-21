@@ -34,6 +34,7 @@ World *newWorld(int w, int h)
 
     /* allocate it */
     SF(ret, malloc, NULL, (sizeof(World)));
+    ret->ts = 0;
     ret->w = w;
     ret->h = h;
     SF(ret->c, malloc, NULL, (w*h*2));
@@ -235,5 +236,63 @@ void updateWorld(World *world, int iter)
         }
         memcpy(world->c, world->c + wh, wh);
         memcpy(world->owner, world->owner + wh, wh);
+        world->ts++;
+    }
+}
+
+/* generate a viewport char for this location */
+static unsigned char viewportChar(World *world, int i)
+{
+    char ret = world->c[i];
+    if (ret == CELL_AGENT || ret == CELL_FLAG || ret == CELL_BASE)
+        ret += world->owner[i] - 1;
+    return ret;
+}
+
+/* generate a viewport from this location and cardinality */
+void viewport(unsigned char *c, unsigned char *damage, World *world, int x, int y, int cardinality, int sz)
+{
+    int xr, yr, xd, yd, sx, sy, hsz, i, cell;
+
+    hsz = sz/2;
+
+    /* crazy math time */
+    switch (cardinality) {
+        case NORTH:
+        default: /* this should never happen :) */
+            yr = xd = 0;
+            xr = 1;
+            yd = 1;
+            break;
+
+        case EAST:
+            xr = yd = 0;
+            yr = 1;
+            xd = -1;
+            break;
+
+        case SOUTH:
+            yr = xd = 0;
+            xr = -1;
+            yd = -1;
+            break;
+
+        case WEST:
+            xr = yd = 0;
+            yr = -1;
+            xd = 1;
+            break;
+    }
+
+    /* now loop over the whole area */
+    i = 0;
+    for (sy = -sz + 1; sy <= 0; sy++) {
+        for (sx = -hsz; sx <= hsz; sx++, i++) {
+            cell = getCell(world,
+                x + xr*sx + xd*sy,
+                y + yr*sx + yd*sy);
+            c[i] = viewportChar(world, cell);
+            damage[i] = world->damage[cell];
+        }
     }
 }

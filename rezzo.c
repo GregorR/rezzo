@@ -14,16 +14,23 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/select.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <pthread.h>
+
 #include <SDL.h>
 
+#include "agent.h"
+#include "buffer.h"
 #include "ca.h"
-#include "helpers.h"
+
+BUFFER(charp, char *);
 
 #define SDLERR do { \
     fprintf(stderr, "%s\n", SDL_GetError()); \
@@ -32,7 +39,7 @@
 
 Uint32 *typeColors, *ownerColors;
 
-Uint32 clock(Uint32 interval, void *param)
+Uint32 turn(Uint32 interval, void *param)
 {
     SDL_Event ev;
 
@@ -66,10 +73,18 @@ void drawWorld(World *world, SDL_Surface *buf, int z)
     SDL_UpdateRect(buf, 0, 0, buf->w, buf->h);
 }
 
-void tick(World *world, SDL_Surface *buf, int z)
+void tick(AgentList *agents)
 {
+    World *world = agents->world;
+    Agent *agent;
+
+    /* update the world */
     updateWorld(world, 1);
-    drawWorld(world, buf, z);
+
+    /* tell the agents */
+    for (agent = agents->head; agent; agent = agent->next) {
+        agentServerMessage(agent, world->ts);
+    }
 }
 
 void initColors(SDL_Surface *buf)
@@ -84,42 +99,118 @@ void initColors(SDL_Surface *buf)
     COL(CONDUCTOR, 127, 127, 127);
     COL(ELECTRON, 255, 255, 0);
     COL(ELECTRON_TAIL, 127, 127, 0);
-    COL(ACTOR, 255, 0, 255);
+    COL(AGENT, 255, 0, 255);
     COL(FLAG, 255, 255, 255);
     COL(BASE, 255, 255, 255);
 #undef COL
 }
 
+void nonblocking(int fd)
+{
+    int flags, tmpi;
+    SF(flags, fcntl, -1, (fd, F_GETFL, 0));
+    SF(tmpi, fcntl, -1, (fd, F_SETFL, flags | O_NONBLOCK));
+}
+
+void *agentThread(void *agentsvp);
+int wakeup[2];
+
 int main(int argc, char **argv)
 {
-    int w, h, z, r;
+    int w, h, z, r, i, tmpi;
+    struct timeval tv;
     SDL_Surface *buf;
     SDL_Event ev;
     World *world;
+    AgentList *agents;
+    struct Buffer_charp agentProgs;
+    pthread_t agentPThread;
 
-    if (argc < 4) {
-        fprintf(stderr, "Use: rezzo <w> <h> <z> [random seed]\n");
-        exit(1);
-    }
-    w = atoi(argv[1]);
-    h = atoi(argv[2]);
-    z = atoi(argv[3]);
+    /* defaults */
+    w = h = 640;
+    z = 1;
+    gettimeofday(&tv, NULL);
+    r = tv.tv_sec ^ tv.tv_usec ^ getpid();
+    srandom(r);
+    r = random();
+    INIT_BUFFER(agentProgs);
 
-    if (argc > 4) {
-        r = atoi(argv[4]);
-    } else {
-        struct timeval tv;
-        gettimeofday(&tv, NULL);
-        r = tv.tv_sec ^ tv.tv_usec ^ getpid();
-        srandom(r);
-        r = random();
+    /* options */
+    for (i = 1; i < argc; i++) {
+        char *arg = argv[i];
+        char *nextarg = (i < argc - 1) ? argv[i+1] : NULL;
+#define ARG(x) if (!strcmp(arg, #x))
+#define ARGN(x) if (!strcmp(arg, #x) && nextarg)
+        ARGN(-w) {
+            w = atoi(nextarg);
+            i++;
+        } else ARGN(-h) {
+            h = atoi(nextarg);
+            i++;
+        } else ARGN(-z) {
+            z = atoi(nextarg);
+            i++;
+        } else ARGN(-r) {
+            r = atoi(nextarg);
+            i++;
+        } else if (arg[0] != '-') {
+            WRITE_ONE_BUFFER(agentProgs, arg);
+        } else {
+            fprintf(stderr, "%s?! What's this nonsense!\n", arg);
+            exit(1);
+        }
     }
+
     fprintf(stderr, "Random seed: %d\n", r);
     srandom(r);
 
     /* make our world */
     world = newWorld(w, h);
     randWorld(world);
+
+    /* prepare our agents */
+    agents = newAgentList(world);
+    for (i = 0; i < agentProgs.bufused; i++) {
+        char *prog = agentProgs.buf[i];
+        int rpipe[2], wpipe[2];
+        pid_t pid;
+
+        /* prepare our pipes */
+        SF(tmpi, pipe, -1, (rpipe));
+        SF(tmpi, pipe, -1, (wpipe));
+        nonblocking(rpipe[0]);
+        nonblocking(wpipe[1]);
+
+        /* then fork off */
+        SF(pid, fork, -1, ());
+        if (pid == 0) {
+            int maxfd;
+            dup2(rpipe[1], 1);
+            dup2(wpipe[0], 0);
+
+            /* close all other FDs */
+            maxfd = sysconf(_SC_OPEN_MAX);
+            for (i = 3; i < maxfd; i++) close(i);
+
+            /* then go */
+            execl(prog, prog, NULL);
+            exit(1);
+        }
+
+        /* close the ends we don't need */
+        close(rpipe[1]);
+        close(wpipe[0]);
+
+        /* then make the agent */
+        newAgent(agents, rpipe[0], wpipe[1]);
+    }
+
+    /* and the agent thread */
+    SF(tmpi, pipe, -1, (wakeup));
+    nonblocking(wakeup[0]);
+    nonblocking(wakeup[1]);
+
+    pthread_create(&agentPThread, NULL, agentThread, agents);
 
     /* initialize SDL */
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0) SDLERR;
@@ -129,7 +220,7 @@ int main(int argc, char **argv)
     initColors(buf);
     drawWorld(world, buf, z);
 
-    SDL_AddTimer(60, clock, NULL);
+    SDL_AddTimer(60, turn, NULL);
 
     while (SDL_WaitEvent(&ev)) {
         switch (ev.type) {
@@ -138,10 +229,72 @@ int main(int argc, char **argv)
                 break;
 
             case SDL_USEREVENT:
-                tick(world, buf, z);
+                write(wakeup[1], "w", 1);
+                drawWorld(world, buf, z);
                 break;
         }
     }
 
     return 0;
+}
+
+void *agentThread(void *agentsvp)
+{
+    AgentList *agents = agentsvp;
+    Agent *agent;
+    int nfds = 0;
+    char c;
+    if (wakeup[0] >= nfds) nfds = wakeup[0] + 1;
+
+    while (1) {
+        fd_set rdset, wrset;
+
+        /* figure out who needs what */
+        FD_ZERO(&rdset);
+        FD_ZERO(&wrset);
+        FD_SET(wakeup[0], &rdset);
+        for (agent = agents->head; agent; agent = agent->next) {
+            FD_SET(agent->rfd, &rdset);
+            if (agent->rfd >= nfds) nfds = agent->rfd + 1;
+            if (agent->wbuf.bufused) {
+                FD_SET(agent->wfd, &wrset);
+                if (agent->wfd >= nfds) nfds = agent->wfd + 1;
+            }
+        }
+
+        /* then select something */
+        select(nfds, &rdset, &wrset, NULL, NULL);
+
+        /* figure out which have read actions */
+        for (agent = agents->head; agent; agent = agent->next) {
+            if (FD_ISSET(agent->rfd, &rdset)) {
+                agentIncoming(agent);
+            }
+        }
+
+        /* and maybe do a world step */
+        if (FD_ISSET(wakeup[0], &rdset)) {
+            if (read(wakeup[0], &c, 1) == 1)
+                if (!c) break;
+            tick(agents);
+        }
+
+        /* then write actions */
+        for (agent = agents->head; agent; agent = agent->next) {
+            if (FD_ISSET(agent->wfd, &wrset)) {
+                ssize_t wr;
+                wr = write(agent->wfd, agent->wbuf.buf, agent->wbuf.bufused);
+                if (wr <= 0) {
+                    /* yukk! */
+                    fprintf(stderr, "Failed to write to agent %d!\n", (int) agent->id);
+                    agent->wbuf.bufused = 0;
+                } else {
+                    memmove(agent->wbuf.buf, agent->wbuf.buf + wr, agent->wbuf.bufused - wr);
+                    agent->wbuf.bufused -= wr;
+                }
+            }
+        }
+    }
+
+    return NULL;
 }

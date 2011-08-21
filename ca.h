@@ -20,6 +20,7 @@
 typedef struct _World World;
 
 struct _World {
+    unsigned char ts;
     int w, h;
     unsigned char *c, *owner, *damage;
 };
@@ -29,9 +30,13 @@ enum CellTypes {
     CELL_CONDUCTOR = '.',
     CELL_ELECTRON = '*',
     CELL_ELECTRON_TAIL = ',',
-    CELL_ACTOR = '0',
+    CELL_AGENT = '0',
     CELL_FLAG = 'A',
     CELL_BASE = 'a'
+};
+
+enum Cardinality {
+    NORTH, EAST, SOUTH, WEST, CARDINALITIES
 };
 
 /* allocate a world */
@@ -48,5 +53,8 @@ void updateCell(World *world, int x, int y, unsigned char *c, unsigned char *own
 
 /* update the whole world */
 void updateWorld(World *world, int iter);
+
+/* generate a viewport from this location and cardinality */
+void viewport(unsigned char *c, unsigned char *damage, World *world, int x, int y, int cardinality, int sz);
 
 #endif

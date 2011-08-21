@@ -4,7 +4,7 @@ CLIBFLAGS=`sdl-config --cflags`
 LDFLAGS=
 LIBS=`sdl-config --libs`
 
-OBJS=ca.o rezzo.o
+OBJS=agent.o ca.o rezzo.o
 
 all: rezzo
 
