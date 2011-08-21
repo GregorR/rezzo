@@ -193,8 +193,8 @@ int main(int argc, char **argv)
     /* defaults */
     timeout = 60000;
     mustTimeout = 1;
-    w = h = 640;
-    z = 1;
+    w = h = 320;
+    z = 2;
     gettimeofday(&tv, NULL);
     r = tv.tv_sec ^ tv.tv_usec ^ getpid();
     srandom(r);

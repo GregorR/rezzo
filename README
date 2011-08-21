@@ -47,7 +47,7 @@ is transitioned into an unowned state as follows:
 
 Agents have a location (reflected in the CA) and a cardinal direction. Agents
 are not told their absolute location or direction. During each agent's turn,
-the agent is given a viewport (the 17x17 part of the world in front of them),
+the agent is given a viewport (the 13x13 part of the world in front of them),
 and allowed a short time period (typically 1/15th of a second) to make a move.
 During an agent's turn, they may:
 
