@@ -229,8 +229,8 @@ void updateWorld(World *world, int iter)
     wh = w * h;
 
     while (iter--) {
-        for (y = 0, yoff = 0; y < h-1; y++, yoff += w) {
-            for (x = 0, i = yoff; x < w-1; x++, i++) {
+        for (y = 0, yoff = 0; y < h; y++, yoff += w) {
+            for (x = 0, i = yoff; x < w; x++, i++) {
                 updateCell(world, x, y, world->c + wh + y*w + x, world->owner + wh + y*w + x);
             }
         }
