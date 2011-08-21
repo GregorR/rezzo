@@ -152,11 +152,11 @@ static void agentClientMessage(Agent *agent, ClientMessage *cm)
     y = agent->y;
     i = getCell(world, x, y);
     nx = agent->x + fx;
+    ny = agent->y + fy;
     if (nx < 0) nx += world->w;
     if (nx >= world->w) nx -= world->w;
     if (ny < 0) ny += world->h;
     if (ny >= world->h) ny -= world->h;
-    ny = agent->y + fy;
     ni = getCell(world, nx, ny);
 
     /* then perform the action */
