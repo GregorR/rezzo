@@ -79,7 +79,7 @@ AgentList *newAgentList(World *world);
 Agent *newAgent(AgentList *list, int rfd, int wfd);
 
 /* generate a server message for this agent and buffer it */
-void agentServerMessage(Agent *agent, unsigned char ts);
+void agentServerMessage(Agent *agent);
 
 /* handle incoming data from this agent */
 void agentIncoming(Agent *agent);

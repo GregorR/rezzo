@@ -83,7 +83,7 @@ void tick(AgentList *agents)
 
     /* tell the agents */
     for (agent = agents->head; agent; agent = agent->next) {
-        agentServerMessage(agent, world->ts);
+        agentServerMessage(agent);
     }
 }
 

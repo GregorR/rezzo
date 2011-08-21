@@ -69,14 +69,14 @@ Agent *newAgent(AgentList *list, int rfd, int wfd)
 }
 
 /* generate a server message for this agent and buffer it */
-void agentServerMessage(Agent *agent, unsigned char ts)
+void agentServerMessage(Agent *agent)
 {
     ServerMessage tosend;
 
     /* first the basics */
     tosend.ack = agent->ack;
-    tosend.ts = ts;
-    agent->ts = ts;
+    tosend.ts = agent->world->ts;
+    agent->ts = tosend.ts;
     agent->ack = ACK_NO_MESSAGE;
 
     /* then the viewport */
