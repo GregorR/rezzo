@@ -52,6 +52,8 @@ struct _Agent {
     unsigned char id; /* agent number */
     World *world; /* the world this agent is in */
     int x, y, c; /* location in it (must be consistent with map) and cardinality */
+    int startx, starty; /* starting location */
+    int inv; /* how many wires you have */
     unsigned char ts, ack; /* last turn sent to this client, and ack for its response (if any) */
     int rfd, wfd; /* FDs to read from and write to this agent */
     struct Buffer_char rbuf, wbuf; /* buffers for things to read/write */
@@ -64,6 +66,7 @@ struct _AgentList {
 
 struct _ServerMessage {
     unsigned char ack, ts; /* acknowledgement of previous message, current timestamp */
+    unsigned char inv; /* your current inventory */
     unsigned char c[VIEWPORT_SQ]; /* visible area */
     unsigned char damage[VIEWPORT_SQ]; /* damage in that area */
 };
