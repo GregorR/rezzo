@@ -36,7 +36,9 @@ Agent *newAgent(AgentList *list, int rfd, int wfd)
 {
     World *world = list->world;
     Agent *ret;
-    int i;
+    int i, posok, x, y;
+    CardinalityHelper ch;
+
     SF(ret, malloc, NULL, (sizeof(Agent)));
     memset(ret, 0, sizeof(Agent));
     ret->world = list->world;
@@ -56,13 +58,57 @@ Agent *newAgent(AgentList *list, int rfd, int wfd)
     }
 
     /* put it somewhere random */
-    do {
+    posok = 0;
+    while (!posok) {
         ret->x = random() % world->w;
         ret->y = random() % world->h;
         i = getCell(world, ret->x, ret->y);
-    } while (world->c[i] != CELL_NONE);
+
+        /* check the surrounding area */
+        posok = 1;
+        for (y = -2; y <= 2; y++) {
+            for (x = -2; x <= 2; x++) {
+                if (world->owner[getCell(world, ret->x + x, ret->y + y)]) {
+                    posok = 0;
+                    goto posnotok;
+                }
+            }
+        }
+        posnotok: (void) 0;
+    }
+
+    /* reset the surrounding area to the proper configuration */
+    for (y = -2; y <= 2; y++) {
+        for (x = -2; x <= 2; x++) {
+            world->c[getCell(world, ret->x + x, ret->y + y)] = CELL_NONE;
+        }
+    }
     ret->c = random() % CARDINALITIES;
+    ch = cardinalityHelpers[ret->c];
+
     world->c[i] = CELL_AGENT;
+    world->owner[i] = ret->id;
+
+    /* base cells */
+    i = getCell(world,
+        ret->x + ch.xr*-1 + ch.xd*-1,
+        ret->y + ch.yr*-1 + ch.yd*-1);
+    world->c[i] = CELL_BASE;
+    world->owner[i] = ret->id;
+    i = getCell(world,
+        ret->x + ch.xr*1 + ch.xd*-1,
+        ret->y + ch.yr*1 + ch.yd*-1);
+    world->c[i] = CELL_BASE;
+    world->owner[i] = ret->id;
+    i = getCell(world,
+        ret->x + ch.xr*-1 + ch.xd*1,
+        ret->y + ch.yr*-1 + ch.yd*1);
+    world->c[i] = CELL_FLAG_GEYSER;
+    world->owner[i] = ret->id;
+    i = getCell(world,
+        ret->x + ch.xr*1 + ch.xd*1,
+        ret->y + ch.yr*1 + ch.yd*1);
+    world->c[i] = CELL_FLAG_GEYSER;
     world->owner[i] = ret->id;
 
     return ret;

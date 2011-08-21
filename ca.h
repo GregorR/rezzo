@@ -32,12 +32,21 @@ enum CellTypes {
     CELL_ELECTRON_TAIL = '~',
     CELL_AGENT = '0',
     CELL_FLAG = 'A',
-    CELL_BASE = 'a'
+    CELL_FLAG_GEYSER = 'a',
+    CELL_BASE = 'n'
 };
 
 enum Cardinality {
     NORTH, EAST, SOUTH, WEST, CARDINALITIES
 };
+
+typedef struct _CardinalityHelper CardinalityHelper;
+
+struct _CardinalityHelper {
+    signed char xr, yr, xd, yd;
+};
+
+extern const CardinalityHelper cardinalityHelpers[];
 
 /* allocate a world */
 World *newWorld(int w, int h);

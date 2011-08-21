@@ -90,6 +90,7 @@ void initColors(SDL_Surface *buf)
     COL(ELECTRON_TAIL, 127, 127, 0);
     COL(AGENT, 255, 0, 255);
     COL(FLAG, 255, 255, 255);
+    COL(FLAG_GEYSER, 255, 255, 255);
     COL(BASE, 255, 255, 255);
 #undef COL
 }

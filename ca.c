@@ -27,6 +27,13 @@
 #include "ca.h"
 #include "helpers.h"
 
+const CardinalityHelper cardinalityHelpers[] = {
+    {1, 0, 0, 1},
+    {0, 1, -1, 0},
+    {-1, 0, 0, -1},
+    {0, -1, 1, 0}
+};
+
 /* allocate a world */
 World *newWorld(int w, int h)
 {
@@ -191,7 +198,7 @@ void updateCell(World *world, int x, int y, unsigned char *c, unsigned char *own
         /* check neighborhood for flags */
         unsigned char newOwner = 0;
         for (i = 0; i < 9; i++) {
-            if (ncs[i] == CELL_FLAG || ncs[i] == CELL_BASE) {
+            if (ncs[i] == CELL_FLAG || ncs[i] == CELL_FLAG_GEYSER) {
                 if (newOwner != 0 && world->owner[neigh[i]] != newOwner)
                     break;
                 newOwner = world->owner[neigh[i]];
@@ -257,7 +264,7 @@ void updateWorld(World *world, int iter)
 static unsigned char viewportChar(World *world, int i)
 {
     char ret = world->c[i];
-    if (ret == CELL_AGENT || ret == CELL_FLAG || ret == CELL_BASE)
+    if (ret == CELL_AGENT || ret == CELL_FLAG || ret == CELL_FLAG_GEYSER || ret == CELL_BASE)
         ret += world->owner[i] - 1;
     return ret;
 }
@@ -265,45 +272,21 @@ static unsigned char viewportChar(World *world, int i)
 /* generate a viewport from this location and cardinality */
 void viewport(unsigned char *c, unsigned char *damage, World *world, int x, int y, int cardinality, int sz)
 {
-    int xr, yr, xd, yd, sx, sy, hsz, i, cell;
+    CardinalityHelper ch;
+    int sx, sy, hsz, i, cell;
 
     hsz = sz/2;
 
     /* crazy math time */
-    switch (cardinality) {
-        case NORTH:
-        default: /* this should never happen :) */
-            yr = xd = 0;
-            xr = 1;
-            yd = 1;
-            break;
-
-        case EAST:
-            xr = yd = 0;
-            yr = 1;
-            xd = -1;
-            break;
-
-        case SOUTH:
-            yr = xd = 0;
-            xr = -1;
-            yd = -1;
-            break;
-
-        case WEST:
-            xr = yd = 0;
-            yr = -1;
-            xd = 1;
-            break;
-    }
+    ch = cardinalityHelpers[cardinality];
 
     /* now loop over the whole area */
     i = 0;
     for (sy = -sz + 1; sy <= 0; sy++) {
         for (sx = -hsz; sx <= hsz; sx++, i++) {
             cell = getCell(world,
-                x + xr*sx + xd*sy,
-                y + yr*sx + yd*sy);
+                x + ch.xr*sx + ch.xd*sy,
+                y + ch.yr*sx + ch.yd*sy);
             c[i] = viewportChar(world, cell);
             damage[i] = world->damage[cell];
         }
