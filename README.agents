@@ -1,0 +1,68 @@
+Bots may be written in any language, and communicate with the server via stdin
+and stdout. The protocol is documented here via its C structs. The server sends
+a message every time a tick occurs (typically 15 per second), and the bot my
+respond at any time before the next tick. The server message includes a
+viewport. The size of the viewport is 13x13 (VIEWPORT_SQ = 13 times 13). Every
+message includes a timestamp; client messages must be sent before the next
+server message is generated /and/ must have the correct timestamp in order to
+be accepted. Timestamps simply wrap around every 256 ticks.
+
+Server messages are as follows:
+
+struct _ServerMessage {
+    unsigned char ack, ts;
+    unsigned char c[VIEWPORT_SQ];
+    unsigned char damage[VIEWPORT_SQ];
+};
+
+ack is a ClientAck:
+
+enum ClientAcks {
+    ACK_OK = 0,
+    ACK_NO_MESSAGE,
+    ACK_INVALID_ACTION,
+    ACK_INVALID_MESSAGE,
+    ACK_MULTIPLE_MESSAGES
+};
+
+Note that a server message for timestamp X includes the acknowledgement of the
+client's message for timestamp X-1. The actual value of ack is discussed in the
+next section.
+
+The viewport is the 13x13 area in front of the agent, represented
+left-to-right, distant-to-close. The last row of c is the row which includes
+the agent itself, in the middle position. The characters used by c are:
+
+   (space) for blank
+ . for conductor
+ * for electron
+ ~ for electron tail
+ 0-9 for agents
+ A-J for flags
+ a-j for flag geysers
+ n-u for bases
+
+
+Client messages are considerably simpler:
+
+struct _ClientMessage {
+    unsigned char ts, act;
+};
+
+act is a ClientAction:
+
+enum ClientActions {
+    ACT_ADVANCE = '^',
+    ACT_TURN_LEFT = '\\',
+    ACT_TURN_RIGHT = '/',
+    ACT_BUILD = '.',
+    ACT_HIT = '!'
+};
+
+If the client message is received too late, it is discarded and the
+acknowledgement is ACK_NO_MESSAGE (since the server will have already generated
+the response). ACK_INVALID_MESSAGE is for invalid commands or other errors,
+ACK_INVALID_ACTION is for an action that may not be performed, e.g. advancing
+into a conductor. ACK_MULTIPLE_MESSAGES is only sent if the server receives
+multiple messages for the same timestamp. All but the first are discarded, but
+the previous acknowledgments are lost.
