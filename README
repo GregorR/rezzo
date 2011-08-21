@@ -1,0 +1,70 @@
+(This README includes only the concepts, not the protocol for bots)
+
+Rezzo is a capture-the-flag game played by bots (agents) on a cellular
+automaton based on Wireworld. The CA has the following states:
+
+ * blank
+ * conductor (wire)
+ * electron
+ * electron tail
+ * agent
+ * flag
+ * flag geyser
+ * base
+
+The agent, flag, flag geyser and base states are multiplied by the number of
+players. That is, the state agent is really agent0, agent1, agent2, etc.
+
+The game progresses with a CA state transition, followed by agent moves,
+repeating forever. The CA state transitions are based on the 3x3 neighborhood
+surrounding the given cell (eight neighbors). The transitions are:
+
+ * blank, agent, flag geyser and base do not change
+ * conductor:
+   * if one or more neighbor is an electron, -> electron
+   * else, -> conductor
+ * electron:
+   * if one or more neighbor is a flag or flag geyser,
+     * if all neighboring flags and flag geysers have the same owner, -> flag
+       with the same owner
+     * else, -> electron tail
+   * else, -> electron tail
+ * electron tail -> conductor
+ * flag:
+   * if one or more neighbor is a base, the owner of this flag loses (this is
+     independent of the state transition)
+   * if one or more neighbor is an electron, -> conductor
+   * else, -> flag with the same owner
+
+At the end of a CA transition in which a player loses, every cell owned by them
+is transitioned into an unowned state as follows:
+
+ * agent -> blank
+ * flag -> conductor
+ * flag geyser -> blank
+ * base -> blank
+
+Agents have a location (reflected in the CA) and a cardinal direction. Agents
+are not told their absolute location or direction. During an agent's turn, they
+may:
+
+ * advance
+ * turn left
+ * turn right
+ * build
+ * hit
+
+Advancing is legal when the cell in front of the agent is blank. It is replaced
+with the agent, and the agent's cell is made blank.
+
+Turning is always legal.
+
+Building is legal in the same circumstances as advancing. The agent is
+advanced, but the cell it was formerly in is replaced with a conductor, instead
+of blank.
+
+Hitting is legal when the cell in front of the agent is in the state conductor,
+electron, electron tail or flag. Each cell of these states carries a damage
+value, which persists with the cell even as its state changes. Each time the
+cell is hit, its damage value increases. When the damage reaches four, it is
+reset and the cell's state is updated to blank.
