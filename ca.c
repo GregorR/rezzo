@@ -37,10 +37,12 @@ World *newWorld(int w, int h)
     ret->ts = 0;
     ret->w = w;
     ret->h = h;
-    SF(ret->c, malloc, NULL, (w*h*2));
-    memset(ret->c, CELL_NONE, w*h*2);
-    SF(ret->owner, malloc, NULL, (w*h*2));
-    memset(ret->owner, 0, w*h*2);
+    SF(ret->c, malloc, NULL, (w*h));
+    memset(ret->c, CELL_NONE, w*h);
+    SF(ret->c2, malloc, NULL, (w*h));
+    SF(ret->owner, malloc, NULL, (w*h));
+    memset(ret->owner, 0, w*h);
+    SF(ret->o2, malloc, NULL, (w*h));
     SF(ret->damage, malloc, NULL, (w*h));
     memset(ret->damage, 0, w*h);
 
@@ -224,18 +226,29 @@ void updateCell(World *world, int x, int y, unsigned char *c, unsigned char *own
 void updateWorld(World *world, int iter)
 {
     int x, y, yoff, i, w, h, wh;
+    unsigned char *tmp;
     w = world->w;
     h = world->h;
     wh = w * h;
 
     while (iter--) {
+        memcpy(world->c2, world->c, wh);
+        memcpy(world->o2, world->owner, wh);
         for (y = 0, yoff = 0; y < h; y++, yoff += w) {
             for (x = 0, i = yoff; x < w; x++, i++) {
-                updateCell(world, x, y, world->c + wh + y*w + x, world->owner + wh + y*w + x);
+                updateCell(world, x, y, world->c2 + i, world->o2 + i);
             }
         }
-        memcpy(world->c, world->c + wh, wh);
-        memcpy(world->owner, world->owner + wh, wh);
+
+        /* swap buffers */
+        tmp = world->c;
+        world->c = world->c2;
+        world->c2 = tmp;
+
+        tmp = world->owner;
+        world->owner = world->o2;
+        world->o2 = tmp;
+
         world->ts++;
     }
 }

@@ -22,7 +22,7 @@ typedef struct _World World;
 struct _World {
     unsigned char ts;
     int w, h;
-    unsigned char *c, *owner, *damage;
+    unsigned char *c, *c2, *owner, *o2, *damage;
 };
 
 enum CellTypes {
