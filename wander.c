@@ -36,7 +36,7 @@ int main()
     while (1) {
         readAll(0, (char *) &sm, sizeof(ServerMessage));
         cm.ts = sm.ts;
-        if (sm.ack == ACK_INVALID_MESSAGE) {
+        if (sm.ack == ACK_INVALID_ACTION) {
             cm.act = ACT_TURN_RIGHT;
         } else {
             cm.act = ACT_ADVANCE;
