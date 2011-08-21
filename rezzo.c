@@ -40,6 +40,14 @@ BUFFER(charp, char *);
 Uint32 *typeColors, *ownerColors;
 int timeout, mustTimeout;
 
+char help_text[] =
+    "Usage: rezzo warrior ...\n"
+    "Options:\n"
+    "-w N, -h N  Set arena size\n"
+    "-z N        Set display zoom\n"
+    "-t N        Set turn timeout\n"
+    "-q          Disable turn timeout\n";
+
 void drawSpot(World *world, SDL_Surface *buf, int x, int y, int z, Uint32 color)
 {
     int zx, zy, i, yoff, zi;
@@ -218,7 +226,7 @@ int main(int argc, char **argv)
         } else if (arg[0] != '-') {
             WRITE_ONE_BUFFER(agentProgs, arg);
         } else {
-            fprintf(stderr, "%s?! What's this nonsense!\n", arg);
+            fprintf(stderr, "Unknown option: %s\n%s", arg, help_text);
             exit(1);
         }
     }
