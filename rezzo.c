@@ -38,18 +38,7 @@ BUFFER(charp, char *);
 } while (0)
 
 Uint32 *typeColors, *ownerColors;
-
-Uint32 turn(Uint32 interval, void *param)
-{
-    SDL_Event ev;
-
-    ev.type = SDL_USEREVENT;
-    ev.user.code = (int) 'f';
-    ev.user.data1 = ev.user.data2 = NULL;
-    SDL_PushEvent(&ev);
-
-    return interval;
-}
+int timeout, mustTimeout;
 
 void drawWorld(World *world, SDL_Surface *buf, int z)
 {
@@ -127,9 +116,10 @@ int main(int argc, char **argv)
     pthread_t agentPThread;
 
     /* defaults */
+    timeout = 60000;
+    mustTimeout = 1;
     w = h = 640;
     z = 1;
-    t = 60;
     gettimeofday(&tv, NULL);
     r = tv.tv_sec ^ tv.tv_usec ^ getpid();
     srandom(r);
@@ -155,8 +145,10 @@ int main(int argc, char **argv)
             r = atoi(nextarg);
             i++;
         } else ARGN(-t) {
-            t = atoi(nextarg);
+            timeout = atoi(nextarg) * 1000;
             i++;
+        } else ARG(-q) {
+            mustTimeout = 0;
         } else if (arg[0] != '-') {
             WRITE_ONE_BUFFER(agentProgs, arg);
         } else {
@@ -206,14 +198,10 @@ int main(int argc, char **argv)
         close(wpipe[0]);
 
         /* then make the agent */
-        newAgent(agents, rpipe[0], wpipe[1]);
+        agentServerMessage(newAgent(agents, rpipe[0], wpipe[1]));
     }
 
     /* and the agent thread */
-    SF(tmpi, pipe, -1, (wakeup));
-    nonblocking(wakeup[0]);
-    nonblocking(wakeup[1]);
-
     pthread_create(&agentPThread, NULL, agentThread, agents);
 
     /* initialize SDL */
@@ -224,8 +212,6 @@ int main(int argc, char **argv)
     initColors(buf);
     drawWorld(world, buf, z);
 
-    SDL_AddTimer(t, turn, NULL);
-
     while (SDL_WaitEvent(&ev)) {
         switch (ev.type) {
             case SDL_QUIT:
@@ -233,7 +219,6 @@ int main(int argc, char **argv)
                 break;
 
             case SDL_USEREVENT:
-                write(wakeup[1], "w", 1);
                 drawWorld(world, buf, z);
                 break;
         }
@@ -242,13 +227,37 @@ int main(int argc, char **argv)
     return 0;
 }
 
+static void tvsub(struct timeval *into, struct timeval a, struct timeval b)
+{
+    into->tv_sec = a.tv_sec - b.tv_sec;
+    if (a.tv_usec < b.tv_usec) {
+        into->tv_sec--;
+        into->tv_usec = 1000000 - b.tv_usec + a.tv_usec;
+    } else {
+        into->tv_usec = a.tv_usec - b.tv_usec;
+    }
+}
+
+static void tvadd(struct timeval *into, struct timeval a, long usec)
+{
+    into->tv_sec = a.tv_sec;
+    into->tv_usec = a.tv_usec + usec;
+    while (into->tv_usec >= 1000000) {
+        into->tv_sec++;
+        into->tv_usec -= 1000000;
+    }
+}
+
 void *agentThread(void *agentsvp)
 {
     AgentList *agents = agentsvp;
     Agent *agent;
-    int nfds = 0;
+    int nfds = 0, allDone, sr;
     char c;
-    if (wakeup[0] >= nfds) nfds = wakeup[0] + 1;
+    struct timeval cur, next, tv;
+
+    gettimeofday(&cur, NULL);
+    tvadd(&next, cur, timeout);
 
     while (1) {
         fd_set rdset, wrset;
@@ -256,7 +265,6 @@ void *agentThread(void *agentsvp)
         /* figure out who needs what */
         FD_ZERO(&rdset);
         FD_ZERO(&wrset);
-        FD_SET(wakeup[0], &rdset);
         for (agent = agents->head; agent; agent = agent->next) {
             FD_SET(agent->rfd, &rdset);
             if (agent->rfd >= nfds) nfds = agent->rfd + 1;
@@ -267,34 +275,61 @@ void *agentThread(void *agentsvp)
         }
 
         /* then select something */
-        select(nfds, &rdset, &wrset, NULL, NULL);
+        gettimeofday(&cur, NULL);
+        tvsub(&tv, next, cur);
+        if (tv.tv_sec >= 0) {
+            SF(sr, select, -1, (nfds, &rdset, &wrset, NULL, &tv));
+        } else {
+            sr = 0;
+        }
 
         /* figure out which have read actions */
-        for (agent = agents->head; agent; agent = agent->next) {
-            if (FD_ISSET(agent->rfd, &rdset)) {
-                agentIncoming(agent);
+        allDone = 1;
+        if (sr > 0) {
+            if (mustTimeout) allDone = 0;
+            for (agent = agents->head; agent; agent = agent->next) {
+                if (FD_ISSET(agent->rfd, &rdset))
+                    agentIncoming(agent);
+                if (agent->ack == ACK_NO_MESSAGE)
+                    allDone = 0;
             }
         }
 
         /* and maybe do a world step */
-        if (FD_ISSET(wakeup[0], &rdset)) {
-            if (read(wakeup[0], &c, 1) == 1)
-                if (!c) break;
+        if (allDone) {
+            SDL_Event ev;
+
+            ev.type = SDL_USEREVENT;
+            ev.user.code = (int) 'f';
+            ev.user.data1 = ev.user.data2 = NULL;
+            SDL_PushEvent(&ev);
+
             tick(agents);
+
+            /* how shall we proceed? */
+            if (sr > 0) {
+                /* everybody responded */
+                tvadd(&next, cur, timeout);
+            } else {
+                /* timed out */
+                tvadd(&next, next, timeout);
+            }
         }
 
         /* then write actions */
-        for (agent = agents->head; agent; agent = agent->next) {
-            if (FD_ISSET(agent->wfd, &wrset)) {
-                ssize_t wr;
-                wr = write(agent->wfd, agent->wbuf.buf, agent->wbuf.bufused);
-                if (wr <= 0) {
-                    /* yukk! */
-                    fprintf(stderr, "Failed to write to agent %d!\n", (int) agent->id);
-                    agent->wbuf.bufused = 0;
-                } else {
-                    memmove(agent->wbuf.buf, agent->wbuf.buf + wr, agent->wbuf.bufused - wr);
-                    agent->wbuf.bufused -= wr;
+        if (sr > 0) {
+            for (agent = agents->head; agent; agent = agent->next) {
+                if (FD_ISSET(agent->wfd, &wrset)) {
+                    ssize_t wr;
+                    wr = write(agent->wfd, agent->wbuf.buf, agent->wbuf.bufused);
+                    if (wr <= 0) {
+                        /* yukk! */
+                        fprintf(stderr, "Failed to write to agent %d!\n", (int) agent->id);
+                        agent->wbuf.bufused = 0;
+                    } else {
+                        memmove(agent->wbuf.buf, agent->wbuf.buf + wr, agent->wbuf.bufused - wr);
+                        agent->wbuf.bufused -= wr;
+                    }
                 }
             }
         }
