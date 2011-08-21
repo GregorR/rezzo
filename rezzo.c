@@ -146,14 +146,14 @@ void initColors(SDL_Surface *buf)
     COL(ELECTRON, 255, 255, 0);
     COL(ELECTRON_TAIL, 127, 127, 0);
     COL(FLAG_GEYSER, 255, 255, 255);
-    COL(BASE, 255, 255, 255);
+    COL(BASE, 1, 1, 1);
 #undef COL
 
     SF(ownerColors, malloc, NULL, (sizeof(Uint32)*256));
 
 #define COL(c, r, g, b) ownerColors[c] = SDL_MapRGB(fmt, r, g, b)
     COL(1, 255, 0, 0);
-    COL(2, 0, 0, 255);
+    COL(2, 64, 64, 255);
     COL(3, 0, 255, 0);
     COL(4, 255, 127, 0);
     COL(5, 255, 0, 255);
