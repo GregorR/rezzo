@@ -274,6 +274,7 @@ int main(int argc, char **argv)
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0) SDLERR;
     atexit(SDL_Quit);
     if ((buf = SDL_SetVideoMode(w*z, h*z, 32, SDL_SWSURFACE|SDL_DOUBLEBUF)) == NULL) SDLERR;
+    SDL_WM_SetCaption("Rezzo", "Rezzo");
 
     initColors(buf);
     drawWorld(agents, buf, z);
