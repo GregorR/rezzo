@@ -20,7 +20,7 @@ clean:
 	rm -f $(OBJS) rezzo
 	rm -f deps
 
-include deps
+-include deps
 
 deps:
 	$(CC) -MM *.c > deps || echo > deps
