@@ -117,7 +117,6 @@ static void agentClientMessage(Agent *agent, ClientMessage *cm)
     int fx, fy, x, y, nx, ny, i, ni;
 
     if (cm->ts != agent->ts) {
-    fprintf(stderr, "%d %d\n", cm->ts, agent->ts); fflush(stderr);
         /* this isn't what I was expecting! */
         return;
     }
