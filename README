@@ -24,7 +24,8 @@ surrounding the given cell (eight neighbors). The transitions are:
    * if one or more neighbor is an electron, -> electron
    * else, -> conductor
  * electron:
-   * if one or more neighbor is a flag or flag geyser,
+   * if one or more neighbor is a flag or flag geyser and one or more neighbor
+     is an electron tail,
      * if all neighboring flags and flag geysers have the same owner, -> flag
        with the same owner
      * else, -> electron tail
