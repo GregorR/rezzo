@@ -26,6 +26,7 @@
 
 #define VIEWPORT (13)
 #define VIEWPORT_SQ (VIEWPORT*VIEWPORT)
+#define MAX_AGENTS 10
 
 typedef struct _Agent Agent;
 typedef struct _AgentList AgentList;

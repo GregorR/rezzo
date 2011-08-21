@@ -172,10 +172,10 @@ void initColors(SDL_Surface *buf)
     COL(BASE, 255, 255, 255);
 #undef COL
 
-    SF(ownerColors[0], malloc, NULL, (256));
-    SF(ownerColors[1], malloc, NULL, (256));
-    SF(ownerColors[2], malloc, NULL, (256));
-    SF(ownerColors32, malloc, NULL, (sizeof(Uint32)*256));
+    SF(ownerColors[0], malloc, NULL, (MAX_AGENTS+1));
+    SF(ownerColors[1], malloc, NULL, (MAX_AGENTS+1));
+    SF(ownerColors[2], malloc, NULL, (MAX_AGENTS+1));
+    SF(ownerColors32, malloc, NULL, (sizeof(Uint32)*(MAX_AGENTS+1)));
 
 #define COL(c, r, g, b) do { \
     ownerColors[0][c] = r; \
@@ -257,6 +257,11 @@ int main(int argc, char **argv)
             fprintf(stderr, "Unknown option: %s\n%s", arg, help_text);
             exit(1);
         }
+    }
+
+    if (agentProgs.bufused > MAX_AGENTS) {
+        fprintf(stderr, "No more than %d agents are allowed.\n", MAX_AGENTS);
+        exit(1);
     }
 
     fprintf(stderr, "Random seed: %d\n", r);
