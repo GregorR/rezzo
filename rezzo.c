@@ -117,7 +117,7 @@ int wakeup[2];
 
 int main(int argc, char **argv)
 {
-    int w, h, z, r, i, tmpi;
+    int w, h, z, t, r, i, tmpi;
     struct timeval tv;
     SDL_Surface *buf;
     SDL_Event ev;
@@ -129,6 +129,7 @@ int main(int argc, char **argv)
     /* defaults */
     w = h = 640;
     z = 1;
+    t = 60;
     gettimeofday(&tv, NULL);
     r = tv.tv_sec ^ tv.tv_usec ^ getpid();
     srandom(r);
@@ -152,6 +153,9 @@ int main(int argc, char **argv)
             i++;
         } else ARGN(-r) {
             r = atoi(nextarg);
+            i++;
+        } else ARGN(-t) {
+            t = atoi(nextarg);
             i++;
         } else if (arg[0] != '-') {
             WRITE_ONE_BUFFER(agentProgs, arg);
@@ -220,7 +224,7 @@ int main(int argc, char **argv)
     initColors(buf);
     drawWorld(world, buf, z);
 
-    SDL_AddTimer(60, turn, NULL);
+    SDL_AddTimer(t, turn, NULL);
 
     while (SDL_WaitEvent(&ev)) {
         switch (ev.type) {
