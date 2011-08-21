@@ -69,9 +69,9 @@ void drawSpot(World *world, SDL_Surface *buf, int x, int y, int z,
     for (zy = 0, yoff = i; zy < z; zy++, yoff += buf->w) {
         for (zx = 0, zi = yoff; zx < z; zx++, zi++) {
             SDL_GetRGB(pix[zi], fmt, &or, &og, &ob);
-            nr = ((int) r + (int) or) / 2;
-            ng = ((int) g + (int) og) / 2;
-            nb = ((int) b + (int) ob) / 2;
+            nr = (((int) r)*2 + (int) or) / 3;
+            ng = (((int) g)*2 + (int) og) / 3;
+            nb = (((int) b)*2 + (int) ob) / 3;
             pix[zi] = SDL_MapRGB(fmt, nr, ng, nb);
         }
     }
