@@ -41,12 +41,13 @@ Uint32 *typeColors, *ownerColors;
 int timeout, mustTimeout;
 
 char help_text[] =
-    "Usage: rezzo warrior ...\n"
+    "Usage: rezzo [options] warrior ...\n"
     "Options:\n"
-    "-w N, -h N  Set arena size\n"
-    "-z N        Set display zoom\n"
-    "-t N        Set turn timeout\n"
-    "-q          Disable turn timeout\n";
+    "\t-w N, -h N   Set arena size\n"
+    "\t-z N         Set display zoom\n"
+    "\t-t N         Set turn timeout\n"
+    "\t-q           Disable turn timeout\n"
+    "\t-r N         Set random seed\n";
 
 void drawSpot(World *world, SDL_Surface *buf, int x, int y, int z, Uint32 color)
 {
