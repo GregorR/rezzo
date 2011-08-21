@@ -265,6 +265,7 @@ int main(int argc, char **argv)
 
             /* then go */
             execl(prog, prog, NULL);
+            perror(prog);
             exit(1);
         }
 

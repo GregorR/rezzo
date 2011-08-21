@@ -130,6 +130,7 @@ void randWorld(World *world)
 
     /* then build the loops */
     tod = w*h/1024;
+    if (tod == 0) tod = 1;
     for (d = 0; d < tod; d++) {
         x = random() % w;
         y = random() % h;
