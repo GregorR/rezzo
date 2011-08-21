@@ -109,6 +109,7 @@ void drawWorld(AgentList *agents, SDL_Surface *buf, int z)
     /* now draw the agents */
     for (agent = agents->head; agent; agent = agent->next) {
         CardinalityHelper ch = cardinalityHelpers[agent->c];
+        if (!agent->alive) continue;
         r = ownerColors[0][agent->id];
         g = ownerColors[1][agent->id];
         b = ownerColors[2][agent->id];
@@ -295,7 +296,7 @@ int main(int argc, char **argv)
         close(wpipe[0]);
 
         /* then make the agent */
-        agentServerMessage(newAgent(agents, rpipe[0], wpipe[1]));
+        agentServerMessage(newAgent(agents, pid, rpipe[0], wpipe[1]));
     }
 
     /* and the agent thread */
@@ -363,11 +364,13 @@ void *agentThread(void *agentsvp)
         FD_ZERO(&rdset);
         FD_ZERO(&wrset);
         for (agent = agents->head; agent; agent = agent->next) {
-            FD_SET(agent->rfd, &rdset);
-            if (agent->rfd >= nfds) nfds = agent->rfd + 1;
-            if (agent->wbuf.bufused) {
-                FD_SET(agent->wfd, &wrset);
-                if (agent->wfd >= nfds) nfds = agent->wfd + 1;
+            if (agent->alive) {
+                FD_SET(agent->rfd, &rdset);
+                if (agent->rfd >= nfds) nfds = agent->rfd + 1;
+                if (agent->wbuf.bufused) {
+                    FD_SET(agent->wfd, &wrset);
+                    if (agent->wfd >= nfds) nfds = agent->wfd + 1;
+                }
             }
         }
 

@@ -14,9 +14,11 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include "agent.h"
@@ -32,7 +34,7 @@ AgentList *newAgentList(World *world)
 }
 
 /* generate a new client */
-Agent *newAgent(AgentList *list, int rfd, int wfd)
+Agent *newAgent(AgentList *list, pid_t pid, int rfd, int wfd)
 {
     World *world = list->world;
     Agent *ret;
@@ -43,6 +45,7 @@ Agent *newAgent(AgentList *list, int rfd, int wfd)
     memset(ret, 0, sizeof(Agent));
     ret->alive = 1;
     ret->world = list->world;
+    ret->pid = pid;
     ret->rfd = rfd;
     ret->wfd = wfd;
 
@@ -286,6 +289,13 @@ void agentDie(Agent *agent)
 
     /* mark them dead */
     agent->alive = 0;
+
+    /* close the fds */
+    close(agent->rfd);
+    if (agent->wfd != agent->rfd) close(agent->wfd);
+
+    /* kill the proc */
+    kill(agent->pid, SIGKILL);
 
     /* then remove them from the world */
     for (i = 0; i < wh; i++) {

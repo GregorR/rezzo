@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "buffer.h"
 #include "ca.h"
@@ -55,6 +56,8 @@ struct _Agent {
     int x, y, c; /* location in it (must be consistent with map) and cardinality */
     int startx, starty; /* starting location */
     unsigned char ts, ack; /* last turn sent to this client, and ack for its response (if any) */
+
+    pid_t pid; /* pid of this process */
     int rfd, wfd; /* FDs to read from and write to this agent */
     struct Buffer_char rbuf, wbuf; /* buffers for things to read/write */
 };
@@ -78,7 +81,7 @@ struct _ClientMessage {
 AgentList *newAgentList(World *world);
 
 /* generate a new client */
-Agent *newAgent(AgentList *list, int rfd, int wfd);
+Agent *newAgent(AgentList *list, pid_t pid, int rfd, int wfd);
 
 /* generate a server message for this agent and buffer it */
 void agentServerMessage(Agent *agent);
