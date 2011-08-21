@@ -197,14 +197,17 @@ void updateCell(World *world, int x, int y, unsigned char *c, unsigned char *own
     } else if (self == CELL_ELECTRON) {
         /* check neighborhood for flags */
         unsigned char newOwner = 0;
+        unsigned char hasTail = 0;
         for (i = 0; i < 9; i++) {
             if (ncs[i] == CELL_FLAG || ncs[i] == CELL_FLAG_GEYSER) {
                 if (newOwner != 0 && world->owner[neigh[i]] != newOwner)
                     break;
                 newOwner = world->owner[neigh[i]];
+            } else if (ncs[i] == CELL_ELECTRON_TAIL) {
+                hasTail = 1;
             }
         }
-        if (i == 9 && newOwner != 0) {
+        if (i == 9 && newOwner != 0 && hasTail) {
             /* become a flag */
             *c = CELL_FLAG;
             *owner = newOwner;
