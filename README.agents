@@ -1,6 +1,6 @@
 Bots may be written in any language, and communicate with the server via stdin
 and stdout. The protocol is documented here via its C structs. The server sends
-a message every time a tick occurs (typically 15 per second), and the bot my
+a message every time a tick occurs (typically 15 per second), and the bot may
 respond at any time before the next tick. The server message includes a
 viewport. The size of the viewport is 13x13 (VIEWPORT_SQ = 13 times 13). Every
 message includes a timestamp; client messages must be sent before the next
