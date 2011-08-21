@@ -158,7 +158,7 @@ static void agentClientMessage(Agent *agent, ClientMessage *cm)
     /* then perform the action */
     ack = ACK_OK;
     switch (cm->act) {
-        case ACT_FORWARD:
+        case ACT_ADVANCE:
             if (world->c[ni] == CELL_NONE) {
                 agent->x = nx;
                 agent->y = ny;
@@ -169,7 +169,7 @@ static void agentClientMessage(Agent *agent, ClientMessage *cm)
                 world->owner[i] = 0;
                 world->damage[i] = 0;
             } else {
-                ack = ACK_INVALID_MESSAGE;
+                ack = ACK_INVALID_ACTION;
             }
             break;
 
@@ -194,13 +194,13 @@ static void agentClientMessage(Agent *agent, ClientMessage *cm)
                 world->owner[i] = 0;
                 world->damage[i] = 0;
             } else {
-                ack = ACK_INVALID_MESSAGE;
+                ack = ACK_INVALID_ACTION;
             }
             break;
 
-        case ACT_DESTROY:
+        case ACT_HIT:
             if (world->c[ni] == CELL_NONE || world->c[ni] == CELL_AGENT) {
-                ack = ACK_INVALID_MESSAGE;
+                ack = ACK_INVALID_ACTION;
             } else {
                 world->damage[ni]++;
             }

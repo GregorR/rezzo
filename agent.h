@@ -34,16 +34,17 @@ typedef struct _ClientMessage ClientMessage;
 enum ClientAcks {
     ACK_OK = 0,
     ACK_NO_MESSAGE,
+    ACK_INVALID_ACTION,
     ACK_INVALID_MESSAGE,
     ACK_MULTIPLE_MESSAGES
 };
 
 enum ClientActions {
-    ACT_FORWARD = '^',
+    ACT_ADVANCE = '^',
     ACT_TURN_LEFT = '\\',
     ACT_TURN_RIGHT = '/',
     ACT_BUILD = '.',
-    ACT_DESTROY = '-'
+    ACT_HIT = '!'
 };
 
 struct _Agent {

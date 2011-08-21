@@ -219,7 +219,7 @@ int main(int argc, char **argv)
     /* initialize SDL */
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0) SDLERR;
     atexit(SDL_Quit);
-    if ((buf = SDL_SetVideoMode(w*z, h*z, 32, SDL_HWSURFACE|SDL_DOUBLEBUF)) == NULL) SDLERR;
+    if ((buf = SDL_SetVideoMode(w*z, h*z, 32, SDL_SWSURFACE|SDL_DOUBLEBUF)) == NULL) SDLERR;
 
     initColors(buf);
     drawWorld(world, buf, z);

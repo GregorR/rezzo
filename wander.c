@@ -39,7 +39,7 @@ int main()
         if (sm.ack == ACK_INVALID_MESSAGE) {
             cm.act = ACT_TURN_RIGHT;
         } else {
-            cm.act = ACT_FORWARD;
+            cm.act = ACT_ADVANCE;
         }
         writeAll(1, (char *) &cm, sizeof(ClientMessage));
     }
