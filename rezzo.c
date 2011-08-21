@@ -183,11 +183,16 @@ void initColors(SDL_Surface *buf)
     ownerColors[2][c] = b; \
     ownerColors32[c] = SDL_MapRGB(fmt, r, g, b); \
 } while (0)
-    COL(1, 255, 0, 0);
-    COL(2, 64, 64, 255);
-    COL(3, 0, 255, 0);
-    COL(4, 255, 127, 0);
-    COL(5, 255, 0, 255);
+    COL(1, 255, 0, 0); /* red */
+    COL(2, 64, 64, 255); /* blue */
+    COL(3, 0, 255, 0); /* green */
+    COL(4, 255, 127, 0); /* orange */
+    COL(5, 255, 0, 255); /* magenta */
+    COL(6, 0, 255, 180); /* teal */
+    COL(7, 255, 127, 127); /* puce */
+    COL(8, 127, 255, 255); /* cyan */
+    COL(9, 127, 0, 255); /* purple */
+    COL(10, 127, 255, 127); /* light green */
 #undef COL
 }
 
