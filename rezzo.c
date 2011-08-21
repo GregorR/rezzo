@@ -106,7 +106,7 @@ int wakeup[2];
 
 int main(int argc, char **argv)
 {
-    int w, h, z, t, r, i, tmpi;
+    int w, h, z, r, i, tmpi;
     struct timeval tv;
     SDL_Surface *buf;
     SDL_Event ev;
@@ -253,7 +253,6 @@ void *agentThread(void *agentsvp)
     AgentList *agents = agentsvp;
     Agent *agent;
     int nfds = 0, allDone, sr;
-    char c;
     struct timeval cur, next, tv;
 
     gettimeofday(&cur, NULL);
@@ -302,9 +301,9 @@ void *agentThread(void *agentsvp)
             ev.type = SDL_USEREVENT;
             ev.user.code = (int) 'f';
             ev.user.data1 = ev.user.data2 = NULL;
-            SDL_PushEvent(&ev);
 
             tick(agents);
+            SDL_PushEvent(&ev);
 
             /* how shall we proceed? */
             if (sr > 0) {
