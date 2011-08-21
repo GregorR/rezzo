@@ -126,7 +126,6 @@ void agentServerMessage(Agent *agent)
     tosend.ts = agent->world->ts;
     agent->ts = tosend.ts;
     agent->ack = ACK_NO_MESSAGE;
-    tosend.inv = agent->inv & 0xFF;
 
     /* then the viewport */
     viewport(tosend.c, tosend.damage, agent->world, agent->x, agent->y, agent->c, VIEWPORT);
@@ -259,8 +258,6 @@ static void agentClientMessage(Agent *agent, ClientMessage *cm)
                 world->damage[ni]++;
                 if (world->damage[ni] >= 4) {
                     /* DESTROY! EXTERMINATE! */
-                    agent->inv++;
-                    if (agent->inv < 0) agent->inv--;
                     world->c[ni] = CELL_NONE;
                     world->damage[ni] = 0;
                 }
