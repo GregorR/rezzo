@@ -150,7 +150,7 @@ void initColors(SDL_Surface *buf)
 
 #define COL(c, r, g, b) ownerColors[c] = SDL_MapRGB(fmt, r, g, b)
     COL(1, 255, 0, 0);
-    COL(2, 127, 127, 255);
+    COL(2, 0, 0, 255);
     COL(3, 0, 255, 0);
     COL(4, 255, 127, 0);
     COL(5, 255, 0, 255);
