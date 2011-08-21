@@ -27,42 +27,21 @@
 #include "ca.h"
 #include "helpers.h"
 
-/*
-   case CELL_BOUNDARY:
-   case CELL_NONE:
-   case CELL_CONDUCTOR_POTENTIA:
-   case CELL_CONDUCTOR:
-   case CELL_ELECTRON:
-   case CELL_ELECTRON_TAIL:
-   case CELL_FLAG:
-   case CELL_FLAG_GUYSER:
-*/
-
 /* allocate a world */
 World *newWorld(int w, int h)
 {
     World *ret;
-    int x, y, yoff, i;
 
     /* allocate it */
     SF(ret, malloc, NULL, (sizeof(World)));
     ret->w = w;
     ret->h = h;
-    SF(ret->d, malloc, NULL, (sizeof(Cell)*w*h*2));
-    memset(ret->d, 0, sizeof(Cell)*w*h*2);
+    SF(ret->c, malloc, NULL, (w*h*2));
+    memset(ret->c, CELL_NONE, w*h*2);
+    SF(ret->owner, malloc, NULL, (w*h*2));
+    memset(ret->owner, 0, w*h*2);
     SF(ret->damage, malloc, NULL, (w*h));
     memset(ret->damage, 0, w*h);
-
-    /* set up the cells */
-    for (y = 0, yoff = 0; y < h; y++, yoff += w) {
-        for (x = 0, i = yoff; x < w; x++, i++) {
-            if (x == 0 || x == w-1 || y == 0 || y == h-1) {
-                ret->d[i].type = CELL_BOUNDARY;
-            } else {
-                ret->d[i].type = CELL_NONE;
-            }
-        }
-    }
 
     return ret;
 }
@@ -70,32 +49,30 @@ World *newWorld(int w, int h)
 /* build an electron loop */
 int buildLoop(World *world, int x, int y, int w, int h)
 {
-    int sx, sy, yoff, i;
+    int sx, sy;
     w += x;
     h += y;
 
-    if (x < 2 || y < 2 || w > world->w - 2 || h > world->h - 2) return 0;
-
     /* clear the substrate */
-    for (sy = y-1, yoff = (y-1)*world->w; sy <= h; sy++, yoff += world->w) {
-        for (sx = x-1, i = yoff+x-1; sx <= w; sx++, i++) {
-            world->d[i].type = CELL_NONE;
+    for (sy = y-1; sy <= h; sy++) {
+        for (sx = x-1; sx <= w; sx++) {
+            world->c[getCell(world, sx, sy)] = CELL_NONE;
         }
     }
 
     /* build the loop */
-    for (sx = x + 1, i = y*world->w+x+1; sx < w - 1; sx++, i++)
-        world->d[i].type = CELL_CONDUCTOR;
-    for (sy = y + 1, i = (y+1)*world->w+x; sy < h - 1; sy++, i += world->w)
-        world->d[i].type = CELL_CONDUCTOR;
-    for (sy = y + 1, i = (y+1)*world->w+w-1; sy < h - 1; sy++, i += world->w)
-        world->d[i].type = CELL_CONDUCTOR;
-    for (sx = x + 1, i = (h-1)*world->w+x+1; sx < w - 1; sx++, i++)
-        world->d[i].type = CELL_CONDUCTOR;
+    for (sx = x + 1; sx < w - 1; sx++) {
+        world->c[getCell(world, sx, y)] = CELL_CONDUCTOR;
+        world->c[getCell(world, sx, h-1)] = CELL_CONDUCTOR;
+    }
+    for (sy = y + 1; sy < h - 1; sy++) {
+        world->c[getCell(world, x, sy)] = CELL_CONDUCTOR;
+        world->c[getCell(world, w-1, sy)] = CELL_CONDUCTOR;
+    }
 
     /* and the electron */
-    world->d[y*world->w+x+1].type = CELL_ELECTRON;
-    world->d[(y+1)*world->w+x].type = CELL_ELECTRON_TAIL;
+    world->c[getCell(world, x+1, y)] = CELL_ELECTRON;
+    world->c[getCell(world, x, y+1)] = CELL_ELECTRON_TAIL;
     return 1;
 }
 
@@ -111,10 +88,9 @@ void randWorld(World *world)
 
     /* first build the substrate */
     for (d = 0; d < tod; d++) {
-        i = y*w+x;
-        if (world->d[i].type != CELL_NONE) {
-            if (world->d[i].type != CELL_BOUNDARY)
-                world->d[i].type = CELL_UNKNOWN;
+        i = getCell(world, x, y);
+        if ((dx == 0 && dy == 0) || world->c[i] != CELL_NONE) {
+            world->c[i] = CELL_BASE;
             x = random() % (w/4) * 4;
             y = random() % (h/4) * 4;
             dx = dy = 0;
@@ -127,17 +103,17 @@ void randWorld(World *world)
         }
 
         /* now draw here */
-        world->d[i].type = CELL_CONDUCTOR;
+        world->c[i] = CELL_CONDUCTOR;
 
         x += dx;
         y += dy;
     }
 
-    /* fix all the left unknowns */
+    /* fix all the spots I forced not to be built */
     for (y = 0, dy = 0; y < h; y++, dy += w) {
         for (x = 0, i = dy; x < w; x++, i++) {
-            if (world->d[i].type == CELL_UNKNOWN)
-                world->d[i].type = CELL_NONE;
+            if (world->c[i] == CELL_BASE)
+                world->c[i] = CELL_NONE;
         }
     }
 
@@ -148,28 +124,40 @@ void randWorld(World *world)
         y = random() % h;
         dx = random() % 6 + 4;
         dy = random() % 6 + 4;
-        if (!buildLoop(world, x, y, dx, dy)) d--;
+        buildLoop(world, x, y, dx, dy);
     }
 }
 
-/* update the cell in the middle of this neighborhood */
-void updateCell(const Cell *top, const Cell *middle, const Cell *bottom, Cell *into)
+/* get a cell id at a specified location, which may be out of bounds */
+unsigned int getCell(World *world, int x, int y)
 {
-    Cell *neighborhood, self;
-    int i;
-    *into = self = middle[1];
+    while (x < 0) x += world->w;
+    while (x >= world->w) x -= world->w;
+    while (y < 0) y += world->h;
+    while (y >= world->h) y -= world->h;
+    return y*world->w+x;
+}
+
+/* update the cell in the middle of this neighborhood */
+void updateCell(World *world, int x, int y, unsigned char *c, unsigned char *owner)
+{
+    int *neigh;
+    unsigned char *ncs, self, sowner;
+    int i, yi, xi;
+    i = getCell(world, x, y);
+    *c = self = world->c[i];
+    *owner = sowner = world->owner[i];
 
     /* skip simple cases */
-    switch (self.type) {
+    switch (self) {
         /* complex cases: */
-        case CELL_CONDUCTOR_POTENTIA:
         case CELL_CONDUCTOR:
         case CELL_ELECTRON:
         case CELL_FLAG:
             break;
 
         case CELL_ELECTRON_TAIL:
-            into->type = CELL_CONDUCTOR;
+            *c = CELL_CONDUCTOR;
             return;
 
         default:
@@ -177,50 +165,55 @@ void updateCell(const Cell *top, const Cell *middle, const Cell *bottom, Cell *i
     }
 
     /* the rest all need a neighborhood */
-    neighborhood = alloca(sizeof(Cell)*9);
-    memcpy(neighborhood, top, sizeof(Cell)*3);
-    memcpy(neighborhood+3, middle, sizeof(Cell)*3);
-    memcpy(neighborhood+6, bottom, sizeof(Cell)*3);
-    neighborhood[4].type = CELL_NONE;
+    neigh = alloca(sizeof(int)*9);
+    ncs = alloca(9);
 
-    if (self.type == CELL_CONDUCTOR_POTENTIA || self.type == CELL_CONDUCTOR) {
+    i = 0;
+    for (yi = y - 1; yi <= y + 1; yi++) {
+        for (xi = x - 1; xi <= x + 1; xi++, i++) {
+            neigh[i] = getCell(world, xi, yi);
+            ncs[i] = world->c[neigh[i]];
+        }
+    }
+
+    if (self == CELL_CONDUCTOR) {
         /* check for electrons in the neighborhood */
         for (i = 0; i < 9; i++) {
-            if (neighborhood[i].type == CELL_ELECTRON) break;
+            if (ncs[i] == CELL_ELECTRON) break;
         }
         if (i < 9)
-            into->type = self.type + 1;
+            *c = CELL_ELECTRON;
 
-    } else if (self.type == CELL_ELECTRON) {
+    } else if (self == CELL_ELECTRON) {
         /* check neighborhood for flags */
-        unsigned char owner = 0;
+        unsigned char newOwner = 0;
         for (i = 0; i < 9; i++) {
-            if (neighborhood[i].type == CELL_FLAG) {
-                if (owner != 0 && neighborhood[i].owner != owner)
+            if (ncs[i] == CELL_FLAG || ncs[i] == CELL_BASE) {
+                if (newOwner != 0 && world->owner[neigh[i]] != newOwner)
                     break;
-                owner = neighborhood[i].owner;
+                newOwner = world->owner[neigh[i]];
             }
         }
-        if (i == 9 && owner != 0) {
+        if (i == 9 && newOwner != 0) {
             /* become a flag */
-            into->type = CELL_FLAG;
-            into->owner = owner;
+            *c = CELL_FLAG;
+            *owner = newOwner;
         } else {
             /* just dissipate */
-            into->type = CELL_ELECTRON_TAIL;
+            *c = CELL_ELECTRON_TAIL;
         }
 
-    } else if (self.type == CELL_FLAG) {
+    } else if (self == CELL_FLAG) {
         /* check for electrons in the neighborhood */
         for (i = 0; i < 9; i++) {
-            if (neighborhood[i].type == CELL_ELECTRON)
+            if (ncs[i] == CELL_ELECTRON)
                 break;
         }
 
         if (i < 9) {
             /* OK, we can dissipate */
-            into->type = CELL_CONDUCTOR;
-            into->owner = 0;
+            *c = CELL_CONDUCTOR;
+            *owner = 0;
         }
 
     }
@@ -229,42 +222,18 @@ void updateCell(const Cell *top, const Cell *middle, const Cell *bottom, Cell *i
 /* update the whole world */
 void updateWorld(World *world, int iter)
 {
-    int x, y, yoff, i, w, h, wh, prime, copybuf;
+    int x, y, yoff, i, w, h, wh;
     w = world->w;
     h = world->h;
     wh = w * h;
 
-    prime = 0;
-    copybuf = wh;
-
     while (iter--) {
         for (y = 0, yoff = 0; y < h-1; y++, yoff += w) {
             for (x = 0, i = yoff; x < w-1; x++, i++) {
-                if (x == 0 || x == w-1 || y == 0 || y == h-1) {
-                    /* just copy barriers */
-                    world->d[copybuf+i] = world->d[prime+i];
-
-                } else {
-                    /* real update */
-                    updateCell(world->d + prime + i - w - 1,
-                               world->d + prime + i - 1,
-                               world->d + prime + i + w - 1,
-                               world->d + copybuf + i);
-
-                }
+                updateCell(world, x, y, world->c + wh + y*w + x, world->owner + wh + y*w + x);
             }
         }
-
-        if (prime == 0) {
-            prime = wh;
-            copybuf = 0;
-        } else {
-            prime = 0;
-            copybuf = wh;
-        }
+        memcpy(world->c, world->c + wh, wh);
+        memcpy(world->owner, world->owner + wh, wh);
     }
-
-    /* then copy the buf in place */
-    if (prime != 0)
-        memcpy(world->d, world->d + wh, sizeof(Cell) * wh);
 }

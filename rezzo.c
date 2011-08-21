@@ -57,7 +57,7 @@ void drawWorld(World *world, SDL_Surface *buf, int z)
         for (x = 0, wi = wyoff, si = syoff; x < w; x++, wi++, si += z) {
             for (zy = 0; zy < z; zy++) {
                 for (zx = 0; zx < z; zx++) {
-                    pix[si+w*z*zy+zx] = typeColors[world->d[wi].type];
+                    pix[si+w*z*zy+zx] = typeColors[world->c[wi]];
                 }
             }
         }
@@ -76,18 +76,17 @@ void initColors(SDL_Surface *buf)
 {
     SDL_PixelFormat *fmt = buf->format;
 
-    SF(typeColors, malloc, NULL, (sizeof(Uint32)*CELL_TYPE_COUNT));
-    memset(typeColors, 0, sizeof(Uint32)*CELL_TYPE_COUNT);
+    SF(typeColors, malloc, NULL, (sizeof(Uint32)*256));
+    memset(typeColors, 0, sizeof(Uint32)*256);
 
 #define COL(c, r, g, b) typeColors[CELL_ ## c] = SDL_MapRGB(fmt, r, g, b)
-    COL(BOUNDARY, 0, 0, 0);
     COL(NONE, 0, 0, 0);
-    COL(CONDUCTOR_POTENTIA, 64, 64, 64);
     COL(CONDUCTOR, 127, 127, 127);
     COL(ELECTRON, 255, 255, 0);
     COL(ELECTRON_TAIL, 127, 127, 0);
+    COL(ACTOR, 255, 0, 255);
     COL(FLAG, 255, 255, 255);
-    COL(FLAG_GEYSER, 255, 255, 255);
+    COL(BASE, 255, 255, 255);
 #undef COL
 }
 

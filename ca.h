@@ -17,30 +17,21 @@
 #ifndef CA_H
 #define CA_H
 
-typedef struct _Cell Cell;
 typedef struct _World World;
-
-struct _Cell {
-    unsigned char type, owner;
-};
 
 struct _World {
     int w, h;
-    Cell *d;
-    unsigned char *damage;
+    unsigned char *c, *owner, *damage;
 };
 
 enum CellTypes {
-    CELL_UNKNOWN = 0,
-    CELL_BOUNDARY,
-    CELL_NONE,
-    CELL_CONDUCTOR_POTENTIA,
-    CELL_CONDUCTOR,
-    CELL_ELECTRON,
-    CELL_ELECTRON_TAIL,
-    CELL_FLAG,
-    CELL_FLAG_GEYSER,
-    CELL_TYPE_COUNT
+    CELL_NONE = ' ',
+    CELL_CONDUCTOR = '.',
+    CELL_ELECTRON = '*',
+    CELL_ELECTRON_TAIL = ',',
+    CELL_ACTOR = '0',
+    CELL_FLAG = 'A',
+    CELL_BASE = 'a'
 };
 
 /* allocate a world */
@@ -49,8 +40,11 @@ World *newWorld(int w, int h);
 /* randomize a world */
 void randWorld(World *world);
 
-/* update the cell in the middle of this neighborhood */
-void updateCell(const Cell *top, const Cell *middle, const Cell *bottom, Cell *into);
+/* get a cell id at a specified location, which may be out of bounds */
+unsigned int getCell(World *world, int x, int y);
+
+/* update the specified cell */
+void updateCell(World *world, int x, int y, unsigned char *c, unsigned char *owner);
 
 /* update the whole world */
 void updateWorld(World *world, int iter);
