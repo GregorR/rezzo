@@ -124,6 +124,9 @@ void tick(AgentList *agents)
     /* update the world */
     updateWorld(world, 1);
 
+    /* check for losses */
+    agentProcessLosses(agents);
+
     /* tell the agents */
     for (agent = agents->head; agent; agent = agent->next) {
         agentServerMessage(agent);

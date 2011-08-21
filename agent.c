@@ -41,6 +41,7 @@ Agent *newAgent(AgentList *list, int rfd, int wfd)
 
     SF(ret, malloc, NULL, (sizeof(Agent)));
     memset(ret, 0, sizeof(Agent));
+    ret->alive = 1;
     ret->world = list->world;
     ret->rfd = rfd;
     ret->wfd = wfd;
@@ -175,6 +176,12 @@ static void agentClientMessage(Agent *agent, ClientMessage *cm)
         return;
     }
 
+    if (!agent->alive) {
+        /* hah, no */
+        agent->ack = ACK_INVALID_MESSAGE;
+        return;
+    }
+
     /* figure out our cardinality */
     fx = fy = 0;
     switch (agent->c) {
@@ -268,4 +275,48 @@ static void agentClientMessage(Agent *agent, ClientMessage *cm)
             ack = ACK_INVALID_MESSAGE;
     }
     agent->ack = ack;
+}
+
+/* time for this agent to DIE! Muahahahaha */
+void agentDie(Agent *agent)
+{
+    int i;
+    World *world = agent->world;
+    int wh = world->w * world->h;
+
+    /* mark them dead */
+    agent->alive = 0;
+
+    /* then remove them from the world */
+    for (i = 0; i < wh; i++) {
+        if (world->owner[i] == agent->id) {
+            world->owner[i] = 0;
+            if (world->c[i] == CELL_FLAG) {
+                world->c[i] = CELL_CONDUCTOR;
+            } else {
+                world->c[i] = CELL_NONE;
+            }
+        }
+    }
+}
+
+/* process the losses in the world */
+void agentProcessLosses(AgentList *agents)
+{
+    Agent *agent;
+    unsigned char *l;
+    World *world = agents->world;
+
+    for (l = world->losses; *l; l++) {
+        /* find this agent */
+        for (agent = agents->head; agent; agent = agent->next) {
+            if (agent->id == *l) {
+                /* and kill them! */
+                agentDie(agent);
+                break;
+            }
+        }
+    }
+
+    world->losses[0] = 0;
 }

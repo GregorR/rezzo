@@ -21,6 +21,7 @@ typedef struct _World World;
 
 struct _World {
     unsigned char ts;
+    unsigned char losses[256];
     int w, h;
     unsigned char *c, *c2, *owner, *o2, *damage;
 };

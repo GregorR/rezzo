@@ -50,6 +50,7 @@ enum ClientActions {
 struct _Agent {
     Agent *next; /* agents form a list */
     unsigned char id; /* agent number */
+    unsigned char alive; /* still alive? */
     World *world; /* the world this agent is in */
     int x, y, c; /* location in it (must be consistent with map) and cardinality */
     int startx, starty; /* starting location */
@@ -84,5 +85,11 @@ void agentServerMessage(Agent *agent);
 
 /* handle incoming data from this agent */
 void agentIncoming(Agent *agent);
+
+/* time for this agent to DIE! Muahahahaha */
+void agentDie(Agent *agent);
+
+/* process the losses in the world */
+void agentProcessLosses(AgentList *agents);
 
 #endif

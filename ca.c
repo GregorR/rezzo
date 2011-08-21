@@ -42,6 +42,7 @@ World *newWorld(int w, int h)
     /* allocate it */
     SF(ret, malloc, NULL, (sizeof(World)));
     ret->ts = 0;
+    ret->losses[0] = 0;
     ret->w = w;
     ret->h = h;
     SF(ret->c, malloc, NULL, (w*h));
@@ -148,6 +149,15 @@ unsigned int getCell(World *world, int x, int y)
     return y*world->w+x;
 }
 
+/* mark a loss */
+static void markLoss(World *world, unsigned char p)
+{
+    int i;
+    for (i = 0; world->losses[i]; i++);
+    world->losses[i] = p;
+    world->losses[i+1] = 0;
+}
+
 /* update the cell in the middle of this neighborhood */
 void updateCell(World *world, int x, int y, unsigned char *c, unsigned char *owner)
 {
@@ -217,6 +227,11 @@ void updateCell(World *world, int x, int y, unsigned char *c, unsigned char *own
         }
 
     } else if (self == CELL_FLAG) {
+        /* check for bases in the neighborhood */
+        for (i = 0; i < 9; i++) {
+            if (ncs[i] == CELL_BASE && world->owner[neigh[i]] != sowner)
+                markLoss(world, sowner);
+        }
         /* check for electrons in the neighborhood */
         for (i = 0; i < 9; i++) {
             if (ncs[i] == CELL_ELECTRON)
