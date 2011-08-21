@@ -37,7 +37,8 @@ BUFFER(charp, char *);
     exit(1); \
 } while (0)
 
-Uint32 *typeColors, *ownerColors;
+Uint32 *typeColors, *ownerColors32;
+unsigned char *ownerColors[3];
 int timeout, mustTimeout;
 
 char help_text[] =
@@ -49,10 +50,13 @@ char help_text[] =
     "\t-q           Disable turn timeout\n"
     "\t-r N         Set random seed\n";
 
-void drawSpot(World *world, SDL_Surface *buf, int x, int y, int z, Uint32 color)
+void drawSpot(World *world, SDL_Surface *buf, int x, int y, int z,
+              unsigned char r, unsigned char g, unsigned char b)
 {
+    SDL_PixelFormat *fmt = buf->format;
     int zx, zy, i, yoff, zi;
     Uint32 *pix;
+    unsigned char or, og, ob, nr, ng, nb;
 
     while (x < 0) x += world->w;
     while (x >= world->w) x -= world->w;
@@ -64,8 +68,11 @@ void drawSpot(World *world, SDL_Surface *buf, int x, int y, int z, Uint32 color)
 
     for (zy = 0, yoff = i; zy < z; zy++, yoff += buf->w) {
         for (zx = 0, zi = yoff; zx < z; zx++, zi++) {
-            if (pix[zi] == 0) /* black probably :P */
-                pix[zi] = color;
+            SDL_GetRGB(pix[zi], fmt, &or, &og, &ob);
+            nr = ((int) r + (int) or) / 2;
+            ng = ((int) g + (int) og) / 2;
+            nb = ((int) b + (int) ob) / 2;
+            pix[zi] = SDL_MapRGB(fmt, nr, ng, nb);
         }
     }
 }
@@ -75,6 +82,7 @@ void drawWorld(AgentList *agents, SDL_Surface *buf, int z)
     World *world = agents->world;
     int w, h, x, y, zx, zy, wyoff, syoff, wi, si;
     Uint32 color;
+    unsigned char r, g, b;
     Agent *agent;
 
     /* NOTE: assuming buf is 32-bit */
@@ -86,7 +94,7 @@ void drawWorld(AgentList *agents, SDL_Surface *buf, int z)
     for (y = 0, wyoff = 0, syoff = 0; y < h; y++, wyoff += w, syoff += w*z*z) {
         for (x = 0, wi = wyoff, si = syoff; x < w; x++, wi++, si += z) {
             if (world->c[wi] == CELL_FLAG) {
-                color = ownerColors[world->owner[wi]];
+                color = ownerColors32[world->owner[wi]];
             } else {
                 color = typeColors[world->c[wi]];
             }
@@ -101,23 +109,25 @@ void drawWorld(AgentList *agents, SDL_Surface *buf, int z)
     /* now draw the agents */
     for (agent = agents->head; agent; agent = agent->next) {
         CardinalityHelper ch = cardinalityHelpers[agent->c];
-        color = ownerColors[agent->id];
+        r = ownerColors[0][agent->id];
+        g = ownerColors[1][agent->id];
+        b = ownerColors[2][agent->id];
 
         /* draw the arrow at the agent's location */
-        drawSpot(world, buf, agent->x, agent->y, z, color);
+        drawSpot(world, buf, agent->x, agent->y, z, r, g, b);
         for (y = 1; y <= 2; y++) {
             for (x = -y; x <= y; x++) {
                 drawSpot(world, buf,
                     agent->x + ch.xr*x + ch.xd*y,
                     agent->y + ch.yr*x + ch.yd*y,
-                    z, color);
+                    z, r, g, b);
             }
         }
 
         /* and at the agent's base */
         for (y = agent->starty - 3; y <= agent->starty + 3; y++) {
             for (x = agent->startx - 3; x <= agent->startx + 3; x++) {
-                drawSpot(world, buf, x, y, z, color);
+                drawSpot(world, buf, x, y, z, r, g, b);
             }
         }
     }
@@ -155,12 +165,20 @@ void initColors(SDL_Surface *buf)
     COL(ELECTRON, 255, 255, 0);
     COL(ELECTRON_TAIL, 127, 127, 0);
     COL(FLAG_GEYSER, 255, 255, 255);
-    COL(BASE, 1, 1, 1);
+    COL(BASE, 255, 255, 255);
 #undef COL
 
-    SF(ownerColors, malloc, NULL, (sizeof(Uint32)*256));
+    SF(ownerColors[0], malloc, NULL, (256));
+    SF(ownerColors[1], malloc, NULL, (256));
+    SF(ownerColors[2], malloc, NULL, (256));
+    SF(ownerColors32, malloc, NULL, (sizeof(Uint32)*256));
 
-#define COL(c, r, g, b) ownerColors[c] = SDL_MapRGB(fmt, r, g, b)
+#define COL(c, r, g, b) do { \
+    ownerColors[0][c] = r; \
+    ownerColors[1][c] = g; \
+    ownerColors[2][c] = b; \
+    ownerColors32[c] = SDL_MapRGB(fmt, r, g, b); \
+} while (0)
     COL(1, 255, 0, 0);
     COL(2, 64, 64, 255);
     COL(3, 0, 255, 0);
