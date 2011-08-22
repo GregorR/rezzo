@@ -50,8 +50,14 @@ char help_text[] =
     "\t-w N, -h N   Set arena size\n"
     "\t-z N         Set display zoom\n"
     "\t-t N         Set turn timeout\n"
-    "\t-q           Disable turn timeout\n"
-    "\t-r N         Set random seed\n";
+    "\t-q           Advance to the next turn immediately if all players have\n"
+    "\t             moved (quick mode)\n"
+    "\t-r N         Set random seed\n"
+    "\t-v <dir>     Output a \"video\" (sequence of PPM files) to the given\n"
+    "\t             directory\n"
+    "\t-l           Synchronize the CA and rendering threads to guarantee that\n"
+    "\t             no frames are skipped or partially-rendered (most useful\n"
+    "\t             with -v)\n";
 
 void drawSpot(World *world, SDL_Surface *buf, int x, int y, int z,
               unsigned char r, unsigned char g, unsigned char b)
