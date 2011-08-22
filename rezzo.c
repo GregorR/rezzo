@@ -236,9 +236,9 @@ void initColors(SDL_Surface *buf)
     COL(3, 0, 255, 0); /* green */
     COL(4, 255, 127, 0); /* orange */
     COL(5, 255, 64, 255); /* magenta */
-    COL(6, 0, 255, 180); /* teal */
+    COL(6, 127, 255, 255); /* cyan */
     COL(7, 255, 127, 127); /* puce */
-    COL(8, 127, 255, 255); /* cyan */
+    COL(8, 0, 255, 180); /* teal */
     COL(9, 127, 0, 255); /* purple */
     COL(10, 255, 255, 255); /* grey (bleh) */
 #undef COL
