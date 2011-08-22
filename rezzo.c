@@ -39,6 +39,7 @@ BUFFER(charp, char *);
 
 Uint32 *typeColors, *ownerColors32;
 unsigned char *ownerColors[3];
+int useLocks;
 int timeout, mustTimeout;
 
 char help_text[] =
@@ -204,7 +205,7 @@ void nonblocking(int fd)
 }
 
 void *agentThread(void *agentsvp);
-int wakeup[2];
+pthread_mutex_t bigLock;
 
 int main(int argc, char **argv)
 {
@@ -218,6 +219,7 @@ int main(int argc, char **argv)
     pthread_t agentPThread;
 
     /* defaults */
+    useLocks = 0;
     timeout = 60000;
     mustTimeout = 1;
     w = h = 320;
@@ -246,6 +248,8 @@ int main(int argc, char **argv)
         } else ARGN(-r) {
             r = atoi(nextarg);
             i++;
+        } else ARG(-l) {
+            useLocks = 1;
         } else ARGN(-t) {
             timeout = atoi(nextarg) * 1000;
             i++;
@@ -310,6 +314,7 @@ int main(int argc, char **argv)
     }
 
     /* and the agent thread */
+    pthread_mutex_init(&bigLock, NULL);
     pthread_create(&agentPThread, NULL, agentThread, agents);
 
     /* initialize SDL */
@@ -322,6 +327,7 @@ int main(int argc, char **argv)
     drawWorld(agents, buf, z);
 
     while (SDL_WaitEvent(&ev)) {
+        if (useLocks) pthread_mutex_lock(&bigLock);
         switch (ev.type) {
             case SDL_QUIT:
                 exit(0);
@@ -331,6 +337,7 @@ int main(int argc, char **argv)
                 drawWorld(agents, buf, z);
                 break;
         }
+        if (useLocks) pthread_mutex_unlock(&bigLock);
     }
 
     return 0;
@@ -367,6 +374,7 @@ void *agentThread(void *agentsvp)
     gettimeofday(&cur, NULL);
     tvadd(&next, cur, timeout);
 
+    if (useLocks) pthread_mutex_lock(&bigLock);
     while (1) {
         fd_set rdset, wrset;
 
@@ -385,6 +393,7 @@ void *agentThread(void *agentsvp)
         }
 
         /* then select something */
+        if (useLocks) pthread_mutex_unlock(&bigLock);
         gettimeofday(&cur, NULL);
         tvsub(&tv, next, cur);
         if (tv.tv_sec >= 0) {
@@ -392,6 +401,7 @@ void *agentThread(void *agentsvp)
         } else {
             sr = 0;
         }
+        if (useLocks) pthread_mutex_lock(&bigLock);
 
         /* figure out which have read actions */
         allDone = 1;
@@ -444,6 +454,7 @@ void *agentThread(void *agentsvp)
             }
         }
     }
+    if (useLocks) pthread_mutex_unlock(&bigLock);
 
     return NULL;
 }
