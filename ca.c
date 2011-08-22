@@ -101,6 +101,7 @@ void randWorld(World *world)
     for (d = 0; d < tod; d++) {
         i = getCell(world, x, y);
         if ((dx == 0 && dy == 0) || world->c[i] != CELL_NONE) {
+            world->c[i] = CELL_BASE;
             x = random() % (w/4) * 4;
             y = random() % (h/4) * 4;
             dx = dy = 0;
