@@ -105,7 +105,7 @@ void randWorld(World *world)
             x = random() % (w/4) * 4;
             y = random() % (h/4) * 4;
             dx = dy = 0;
-            while ((!dx && !dy) || (dx && dy)) {
+            while (!dx && !dy) {
                 dx = (random() % 3) - 1;
                 dy = (random() % 3) - 1;
             }
@@ -199,10 +199,11 @@ void updateCell(World *world, int x, int y, unsigned char *c, unsigned char *own
 
     if (self == CELL_CONDUCTOR) {
         /* check for electrons in the neighborhood */
+        unsigned char electrons = 0;
         for (i = 0; i < 9; i++) {
-            if (ncs[i] == CELL_ELECTRON) break;
+            if (ncs[i] == CELL_ELECTRON) electrons++;
         }
-        if (i < 9)
+        if (electrons == 1 || electrons == 2)
             *c = CELL_ELECTRON;
 
     } else if (self == CELL_ELECTRON) {
