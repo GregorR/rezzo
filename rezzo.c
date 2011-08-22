@@ -301,6 +301,9 @@ int main(int argc, char **argv)
             useLocks = 1;
             video = nextarg;
             i++;
+        } else ARG(-l) {
+            /* shhhh secret option */
+            useLocks = 1;
         } else ARGN(-t) {
             timeout = atoi(nextarg) * 1000;
             i++;
