@@ -54,10 +54,7 @@ char help_text[] =
     "\t             moved (quick mode)\n"
     "\t-r N         Set random seed\n"
     "\t-v <dir>     Output a \"video\" (sequence of PPM files) to the given\n"
-    "\t             directory\n"
-    "\t-l           Synchronize the CA and rendering threads to guarantee that\n"
-    "\t             no frames are skipped or partially-rendered (most useful\n"
-    "\t             with -v)\n";
+    "\t             directory\n";
 
 void drawSpot(World *world, SDL_Surface *buf, int x, int y, int z,
               unsigned char r, unsigned char g, unsigned char b)
@@ -300,9 +297,8 @@ int main(int argc, char **argv)
         } else ARGN(-r) {
             r = atoi(nextarg);
             i++;
-        } else ARG(-l) {
-            useLocks = 1;
         } else ARGN(-v) {
+            useLocks = 1;
             video = nextarg;
             i++;
         } else ARGN(-t) {
