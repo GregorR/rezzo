@@ -1,8 +1,8 @@
 CC=gcc
 CFLAGS=-g -O3
-CLIBFLAGS=`sdl-config --cflags`
+CLIBFLAGS=`sdl-config --cflags` `pkg-config --cflags libpng`
 LDFLAGS=
-LIBS=`sdl-config --libs`
+LIBS=`sdl-config --libs` `pkg-config --libs libpng`
 
 OBJS=agent.o ca.o rezzo.o
 

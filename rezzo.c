@@ -22,8 +22,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <png.h>
 #include <pthread.h>
-
 #include <SDL.h>
 
 #include "agent.h"
@@ -146,23 +146,43 @@ void drawWorld(AgentList *agents, SDL_Surface *buf, int z)
 
     /* maybe write it out */
     if (video) {
-        FILE *fout;
+        FILE *fout = NULL;
+        png_structp png = NULL;
+        png_infop pngi = NULL;
         static char *fnm = NULL;
+        png_byte **rowptrs = NULL;
         frame++;
 
+        /* open the file */
         if (fnm == NULL)
             SF(fnm, malloc, NULL, (strlen(video) + 128));
-        sprintf(fnm, "%s/%08lu.ppm", video, frame);
+        sprintf(fnm, "%s/%08lu.png", video, frame);
         SF(fout, fopen, NULL, (fnm, "wb"));
-        fprintf(fout, "P6\n%d %d\n255\n", buf->w, buf->h);
 
-        for (y = 0; y < buf->w*buf->h; y++) {
-            r = (pix[y] >> 16) & 0xFF;
-            g = (pix[y] >> 8) & 0xFF;
-            b = pix[y] & 0xFF;
-            fprintf(fout, "%c%c%c", r, g, b);
+        /* prepare PNG */
+        png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+        if (!png) goto pngFail;
+        pngi = png_create_info_struct(png);
+        if (!pngi) goto pngFail;
+        if (setjmp(png_jmpbuf(png))) goto pngFail;
+        png_init_io(png, fout);
+
+        png_set_IHDR(png, pngi, buf->w, buf->h, 8, PNG_COLOR_TYPE_RGB_ALPHA,
+            PNG_INTERLACE_ADAM7, PNG_COMPRESSION_TYPE_DEFAULT,
+            PNG_FILTER_TYPE_DEFAULT);
+
+        /* set up the row pointers */
+        rowptrs = alloca(buf->h * sizeof(png_byte *));
+        for (y = 0, x = 0; y < buf->h; y++, x += buf->pitch) {
+            rowptrs[y] = (png_byte *) pix + x;
         }
+        png_set_rows(png, pngi, rowptrs);
 
+        /* then write it out (FIXME: assuming little-endian, which needs to be swapped) */
+        png_write_png(png, pngi, PNG_TRANSFORM_BGR, NULL);
+
+pngFail:
+        if (png) png_destroy_write_struct(&png, pngi ? &pngi : NULL);
         fclose(fout);
     }
 }
