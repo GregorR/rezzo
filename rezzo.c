@@ -40,7 +40,9 @@ BUFFER(charp, char *);
 Uint32 *typeColors, *ownerColors32;
 unsigned char *ownerColors[3];
 int useLocks;
+char *video;
 int timeout, mustTimeout;
+unsigned long frame;
 
 char help_text[] =
     "Usage: rezzo [options] warrior ...\n"
@@ -135,6 +137,28 @@ void drawWorld(AgentList *agents, SDL_Surface *buf, int z)
     }
 
     SDL_UpdateRect(buf, 0, 0, buf->w, buf->h);
+
+    /* maybe write it out */
+    if (video) {
+        FILE *fout;
+        static char *fnm = NULL;
+        frame++;
+
+        if (fnm == NULL)
+            SF(fnm, malloc, NULL, (strlen(video) + 128));
+        sprintf(fnm, "%s/%08lu.ppm", video, frame);
+        SF(fout, fopen, NULL, (fnm, "wb"));
+        fprintf(fout, "P6\n%d %d\n255\n", buf->w, buf->h);
+
+        for (y = 0; y < buf->w*buf->h; y++) {
+            r = (pix[y] >> 16) & 0xFF;
+            g = (pix[y] >> 8) & 0xFF;
+            b = pix[y] & 0xFF;
+            fprintf(fout, "%c%c%c", r, g, b);
+        }
+
+        fclose(fout);
+    }
 }
 
 void tick(AgentList *agents)
@@ -220,8 +244,10 @@ int main(int argc, char **argv)
 
     /* defaults */
     useLocks = 0;
+    video = NULL;
     timeout = 60000;
     mustTimeout = 1;
+    frame = 0;
     w = h = 320;
     z = 2;
     gettimeofday(&tv, NULL);
@@ -250,6 +276,9 @@ int main(int argc, char **argv)
             i++;
         } else ARG(-l) {
             useLocks = 1;
+        } else ARGN(-v) {
+            video = nextarg;
+            i++;
         } else ARGN(-t) {
             timeout = atoi(nextarg) * 1000;
             i++;
