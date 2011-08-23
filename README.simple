@@ -224,7 +224,8 @@ turns into a conductor (they're permanent):
 ----------------------------------------------------------------
 
 To defeat the enemy, you must bring their flag next to your base, at which
-point all of their flags (and everything else they own) will disappear:
+point all of their flags and everything else they own will disappear (flag
+cells becoming conductors, all other owned cells becoming blank):
 ----------------------------------------------------------------
   ,
   *
