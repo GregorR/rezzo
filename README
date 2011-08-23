@@ -21,7 +21,7 @@ surrounding the given cell (eight neighbors). The transitions are:
 
  * blank, agent, flag geyser and base do not change
  * conductor:
-   * if one or two neighborss are electrons, -> electron
+   * if one or two neighbors are electrons, -> electron
    * else, -> conductor
  * electron:
    * if one or more neighbor is a flag or flag geyser and one or more neighbor
