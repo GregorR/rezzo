@@ -29,6 +29,7 @@
 
 static Uint32 *typeColors, *ownerColors;
 unsigned char clientAction = ACT_NOP;
+unsigned char building = 0;
 ServerMessage sm;
 
 ssize_t readAll(int fd, char *buf, size_t count)
@@ -141,7 +142,11 @@ int main()
                 break;
 
             case SDL_KEYUP:
-                clientAction = ACT_NOP;
+                if (ev.key.keysym.sym == SDLK_SPACE) {
+                    building = 0;
+                } else {
+                    clientAction = ACT_NOP;
+                }
                 break;
 
             case SDL_KEYDOWN:
@@ -160,6 +165,7 @@ int main()
 
                     case SDLK_SPACE:
                         clientAction = ACT_BUILD;
+                        building = 1;
                         break;
 
                     case SDLK_RETURN:
@@ -196,7 +202,11 @@ void *dataThread(void *ign)
 
         /* perform the requested client action */
         cm.ts = sm.ts;
-        cm.act = clientAction;
+        if (clientAction == ACT_ADVANCE && building) {
+            cm.act = ACT_BUILD;
+        } else {
+            cm.act = clientAction;
+        }
         writeAll(1, (char *) &cm, sizeof(ClientMessage));
 
         /* for certain client actions, don't repeat */
