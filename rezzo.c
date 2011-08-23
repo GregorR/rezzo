@@ -28,7 +28,7 @@
 #include "agent.h"
 #include "buffer.h"
 #include "ca.h"
-#include "rsdl.h"
+#include "ui.h"
 
 BUFFER(charp, char *);
 

@@ -21,7 +21,7 @@
 
 #include "agent.h"
 #include "ca.h"
-#include "rsdl.h"
+#include "ui.h"
 
 #define SDLERR do { \
     fprintf(stderr, "%s\n", SDL_GetError()); \

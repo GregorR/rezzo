@@ -1,10 +1,17 @@
 CC=gcc
 CFLAGS=-g -O3
-CLIBFLAGS=`sdl-config --cflags` `pkg-config --cflags libpng`
 LDFLAGS=
-LIBS=`sdl-config --libs` `pkg-config --libs libpng`
 
-OBJS=agent.o ca.o rezzo.o rsdl.o
+UI=sdl
+
+CLIBFLAGS=
+LIBS=
+ifeq ($(UI),sdl)
+CLIBFLAGS+=`sdl-config --cflags` `pkg-config --cflags libpng`
+LIBS+=`sdl-config --libs` `pkg-config --libs libpng`
+endif
+
+OBJS=agent.o ca.o rezzo.o r$(UI).o
 
 all: rezzo
 
