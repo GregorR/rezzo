@@ -215,10 +215,9 @@ void updateCell(World *world, int x, int y, unsigned char *c, unsigned char *own
         unsigned char tails = 0;
         for (i = 0; i < 9; i++) {
             if (ncs[i] == CELL_FLAG || ncs[i] == CELL_FLAG_GEYSER) flags++;
-            else if (ncs[i] == CELL_ELECTRON_TAIL) tails++;
         }
-        if (flags && tails) {
-            /* become a positron */
+        if (flags) {
+            /* become a photon */
             *c = CELL_PHOTON;
         } else {
             /* just dissipate */
@@ -236,7 +235,7 @@ void updateCell(World *world, int x, int y, unsigned char *c, unsigned char *own
             }
         }
         if (i == 9 && newOwner != 0) {
-            /* become a positron */
+            /* become a flag */
             *c = CELL_FLAG;
             *owner = newOwner;
         } else {
@@ -251,7 +250,7 @@ void updateCell(World *world, int x, int y, unsigned char *c, unsigned char *own
                 markLoss(world, sowner);
         }
 
-        /* check for positrons in the neighborhood (for dissipation) */
+        /* check for photons in the neighborhood (for dissipation) */
         for (i = 0; i < 9; i++) {
             if (ncs[i] == CELL_PHOTON)
                 break;
