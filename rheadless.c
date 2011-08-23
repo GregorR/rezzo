@@ -60,9 +60,9 @@ static void drawSpot(World *world, void *bufvp, int x, int y, int z,
     while (y >= world->h) y -= world->h;
 
     pix = buf->pix;
-    i = y*z*buf->w + x*z;
+    i = buf->w*y*z*z*4 + x*z*4;
 
-    for (zy = 0, yoff = i; zy < z; zy++, yoff += buf->w*4) {
+    for (zy = 0, yoff = i; zy < z; zy++, yoff += buf->w*z*4) {
         for (zx = 0, zi = yoff; zx < z; zx++, zi += 4) {
             or = pix[zi];
             og = pix[zi+1];
