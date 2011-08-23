@@ -212,7 +212,7 @@ void initColors(SDL_Surface *buf)
     COL(NONE, 0, 0, 0);
     COL(CONDUCTOR, 127, 127, 127);
     COL(ELECTRON, 255, 255, 0);
-    COL(ELECTRON_TAIL, 127, 127, 0);
+    COL(ELECTRON_TAIL, 64, 64, 0);
 
     /* these will all be colored by the player-coloring step */
     COL(AGENT, 255, 255, 255);
