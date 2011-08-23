@@ -36,7 +36,7 @@ the agent itself, in the middle position. The characters used by c are:
    (space) for blank
  . for conductor
  * for electron
- _ for electron tail
+ , for electron tail
  ~ for photon
  0-9 for agents
  A-J for flags

@@ -55,19 +55,19 @@ ASCII characters:
    (space) for blank
  . for conductor
  * for electron
- _ for electron tail
+ , for electron tail
 
 The following is the behavior of a single electron moving along a wire:
 ----------------------------------------------------------------
-...*_
+...*,
 
-..*_.
+..*,.
 
-.*_..
+.*,..
 
-*_...
+*,...
 
-_....
+,....
 
 .....
 ----------------------------------------------------------------
@@ -75,28 +75,28 @@ _....
 Electrons may be duplicated:
 ----------------------------------------------------------------
 ...
-   .*_
+   .*,
 ...
 
 ...
-   *_.
+   *,.
 ...
 
 ..*
-   _..
+   ,..
 ..*
 
-.*_
+.*,
    ...
-.*_
+.*,
 
-*_.
+*,.
    ...
-*_.
+*,.
 
-_..
+,..
    ...
-_..
+,..
 
 ...
    ...
@@ -108,22 +108,22 @@ cause them to (briefly) be tailless, or for multiple electrons to "share" one
 tail:
 ----------------------------------------------------------------
 ...
-....*_
+....*,
 
 ...
-...*_.
+...*,.
 
 ..*
-..*_..
+..*,..
 
-.*_
-.*_...
+.*,
+.*,...
 
-*_.
-*_....
+*,.
+*,....
 
-_..
-_.....
+,..
+,.....
 
 ...
 ......
@@ -171,30 +171,30 @@ conceptually pull flags towards the electron source. When an electron hits a
 flag, it becomes a photon, and that photon then attracts the flag into its
 cell. The behavior of electrons on a flag is like so:
 ----------------------------------------------------------------
-.F..*_
+.F..*,
 
-.F.*_.
+.F.*,.
 
-.F*_.*
+.F*,.*
 
-.F~.*_
+.F~.*,
 
-..F*_.
+..F*,.
 
 ..F~.*
 
-...F*_
+...F*,
 ----------------------------------------------------------------
 
 Flags may be duplicated:
 ----------------------------------------------------------------
-  .*_
+  .*,
 .F
-  .*_
+  .*,
 
-  *_.
+  *,.
 .F
-  *_.
+  *,.
 
   ~..
 .F
@@ -208,37 +208,37 @@ Flags may be duplicated:
 Flag geysers act similarly to flags, but the cell a flag geyser is in never
 turns into a conductor (they're permanent):
 ----------------------------------------------------------------
-.^..*_
+.^..*,
 
-.^.*_.
+.^.*,.
 
-.^*_.*
+.^*,.*
 
-.^~.*_
+.^~.*,
 
-.^F*_.
+.^F*,.
 
 .^F~.*
 
-.^.F*_
+.^.F*,
 ----------------------------------------------------------------
 
 To defeat the enemy, you must bring their flag next to your base, at which
 point all of their flags (and everything else they own) will disappear:
 ----------------------------------------------------------------
-  _
+  ,
   *
 F..B
 
   .
-  _
+  ,
 F**B
 
   *
   .
-F~_B
+F~,B
 
-  _
+  ,
   *
 .F.B
 
@@ -248,11 +248,11 @@ F~_B
 
   *
   F
-.._B
+..,B
 
 //victory//
 
-  _
+  ,
   *
 ...B
 ----------------------------------------------------------------

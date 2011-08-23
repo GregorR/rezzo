@@ -30,7 +30,7 @@ enum CellTypes {
     CELL_NONE = ' ',
     CELL_CONDUCTOR = '.',
     CELL_ELECTRON = '*',
-    CELL_ELECTRON_TAIL = '_',
+    CELL_ELECTRON_TAIL = ',',
     CELL_PHOTON = '~',
     CELL_AGENT = '0',
     CELL_FLAG = 'A',
