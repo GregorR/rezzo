@@ -323,8 +323,7 @@ void *agentThread(void *data)
                     wr = write(agent->wfd, agent->wbuf.buf, agent->wbuf.bufused);
                     if (wr <= 0) {
                         /* yukk! */
-                        fprintf(stderr, "Failed to write to agent %d!\n", (int) agent->id);
-                        agent->wbuf.bufused = 0;
+                        agentDie(agent);
                     } else {
                         memmove(agent->wbuf.buf, agent->wbuf.buf + wr, agent->wbuf.bufused - wr);
                         agent->wbuf.bufused -= wr;
