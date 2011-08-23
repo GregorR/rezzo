@@ -174,6 +174,7 @@ void updateCell(World *world, int x, int y, unsigned char *c, unsigned char *own
         /* complex cases: */
         case CELL_CONDUCTOR:
         case CELL_ELECTRON:
+        case CELL_PHOTON:
         case CELL_FLAG:
             break;
 
@@ -207,36 +208,50 @@ void updateCell(World *world, int x, int y, unsigned char *c, unsigned char *own
             *c = CELL_ELECTRON;
 
     } else if (self == CELL_ELECTRON) {
-        /* check neighborhood for flags */
-        unsigned char newOwner = 0;
-        unsigned char hasTail = 0;
+        /* check neighborhood for flags and tails */
+        unsigned char flags = 0;
+        unsigned char tails = 0;
         for (i = 0; i < 9; i++) {
-            if (ncs[i] == CELL_FLAG || ncs[i] == CELL_FLAG_GEYSER) {
-                if (newOwner != 0 && world->owner[neigh[i]] != newOwner)
-                    break;
-                newOwner = world->owner[neigh[i]];
-            } else if (ncs[i] == CELL_ELECTRON_TAIL) {
-                hasTail = 1;
-            }
+            if (ncs[i] == CELL_FLAG || ncs[i] == CELL_FLAG_GEYSER) flags++;
+            else if (ncs[i] == CELL_ELECTRON_TAIL) tails++;
         }
-        if (i == 9 && newOwner != 0 && hasTail) {
-            /* become a flag */
-            *c = CELL_FLAG;
-            *owner = newOwner;
+        if (flags && tails) {
+            /* become a positron */
+            *c = CELL_PHOTON;
         } else {
             /* just dissipate */
             *c = CELL_ELECTRON_TAIL;
         }
 
+    } else if (self == CELL_PHOTON) {
+        /* check neighborhood for flags */
+        unsigned char newOwner = 0;
+        for (i = 0; i < 9; i++) {
+            if (ncs[i] == CELL_FLAG || ncs[i] == CELL_FLAG_GEYSER) {
+                if (newOwner != 0 && world->owner[neigh[i]] != newOwner)
+                    break;
+                newOwner = world->owner[neigh[i]];
+            }
+        }
+        if (i == 9 && newOwner != 0) {
+            /* become a positron */
+            *c = CELL_FLAG;
+            *owner = newOwner;
+        } else {
+            /* just dissipate */
+            *c = CELL_CONDUCTOR;
+        }
+
     } else if (self == CELL_FLAG) {
-        /* check for bases in the neighborhood */
+        /* check for bases in the neighborhood (for losses) */
         for (i = 0; i < 9; i++) {
             if (ncs[i] == CELL_BASE && world->owner[neigh[i]] != sowner)
                 markLoss(world, sowner);
         }
-        /* check for electrons in the neighborhood */
+
+        /* check for positrons in the neighborhood (for dissipation) */
         for (i = 0; i < 9; i++) {
-            if (ncs[i] == CELL_ELECTRON)
+            if (ncs[i] == CELL_PHOTON)
                 break;
         }
 

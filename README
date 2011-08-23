@@ -7,6 +7,7 @@ automaton based on Wireworld. The CA has the following states:
  * conductor (wire)
  * electron
  * electron tail
+ * photon
  * agent
  * flag
  * flag geyser
@@ -25,12 +26,13 @@ surrounding the given cell (eight neighbors). The transitions are:
    * else, -> conductor
  * electron:
    * if one or more neighbor is a flag or flag geyser and one or more neighbor
-     is an electron tail,
-     * if all neighboring flags and flag geysers have the same owner, -> flag
-       with the same owner
-     * else, -> electron tail
+     is an electron tail, -> photon
    * else, -> electron tail
  * electron tail -> conductor
+ * photon:
+   * if one or more neighbor is a flag or flag geyser, and all neighboring
+     flags or flag geysers have the same owner, -> flag with that owner
+   * else, -> conductor
  * flag:
    * if one or more neighbor is a base, the owner of this flag loses (this is
      independent of the state transition)
