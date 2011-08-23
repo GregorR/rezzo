@@ -15,6 +15,12 @@ ifeq ($(UI),headless)
 CLIBFLAGS+=`pkg-config --cflags libpng`
 LIBS+=`pkg-config --libs libpng`
 
+else
+ifeq ($(UI),vnc)
+CLIBFLAGS+=`pkg-config --cflags libvncserver libpng`
+LIBS+=`pkg-config --libs libvncserver libpng`
+
+endif
 endif
 endif
 
