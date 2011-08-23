@@ -20,9 +20,6 @@
 extern char *video;
 extern unsigned long frame;
 
-void drawSpot(World *world, void *bufvp, int x, int y, int z,
-              unsigned char r, unsigned char g, unsigned char b);
-
 void drawWorld(AgentList *agents, void *bufvp, int z);
 
 void *uiInit(AgentList *agents, int w, int h, int z);

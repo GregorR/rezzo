@@ -33,8 +33,8 @@ unsigned long frame = 0;
 static Uint32 *typeColors, *ownerColors32;
 static unsigned char *ownerColors[3];
 
-void drawSpot(World *world, void *bufvp, int x, int y, int z,
-              unsigned char r, unsigned char g, unsigned char b)
+static void drawSpot(World *world, void *bufvp, int x, int y, int z,
+                     unsigned char r, unsigned char g, unsigned char b)
 {
     SDL_Surface *buf = bufvp;
     SDL_PixelFormat *fmt = buf->format;
