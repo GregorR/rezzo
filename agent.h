@@ -42,6 +42,7 @@ enum ClientAcks {
 };
 
 enum ClientActions {
+    ACT_NOP = ' ',
     ACT_ADVANCE = '^',
     ACT_TURN_LEFT = '\\',
     ACT_TURN_RIGHT = '/',

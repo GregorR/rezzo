@@ -6,6 +6,7 @@ UI=sdl
 
 CLIBFLAGS=
 LIBS=-pthread
+
 ifeq ($(UI),sdl)
 CLIBFLAGS+=`sdl-config --cflags` `pkg-config --cflags libpng`
 LIBS+=`sdl-config --libs` `pkg-config --libs libpng`
@@ -24,6 +25,10 @@ endif
 endif
 endif
 
+# Interactive is always SDL
+ICLIBFLAGS=`sdl-config --cflags`
+ILIBS=`sdl-config --libs`
+
 OBJS=agent.o ca.o rezzo.o r$(UI).o
 
 all: rezzo
@@ -31,13 +36,16 @@ all: rezzo
 rezzo: $(OBJS)
 	$(CC) $(CFLAGS) $(CLIBFLAGS) $(LDFLAGS) $(OBJS) $(LIBS) -o rezzo
 
+interactive: interactive.c
+	$(CC) $(CFLAGS) $(ICLIBFLAGS) $(LDFLAGS) interactive.c $(ILIBS) -o interactive
+
 .SUFFIXES: .c .o
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(CLIBFLAGS) -c $<
 
 clean:
-	rm -f *.o rezzo
+	rm -f *.o rezzo interactive
 	rm -f deps
 
 -include deps

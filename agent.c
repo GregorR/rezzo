@@ -223,6 +223,10 @@ static void agentClientMessage(Agent *agent, ClientMessage *cm)
     /* then perform the action */
     ack = ACK_OK;
     switch (cm->act) {
+        case ACT_NOP:
+            /* well that was easy! */
+            break;
+
         case ACT_ADVANCE:
             if (world->c[ni] == CELL_NONE) {
                 agent->x = nx;
