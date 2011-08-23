@@ -14,6 +14,9 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#define _BSD_SOURCE /* for random */
+#define _POSIX_SOURCE /* for kill */
+
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>

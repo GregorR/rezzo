@@ -14,6 +14,8 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#define _BSD_SOURCE /* for random */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
