@@ -61,8 +61,7 @@ void drawViewport(SDL_Surface *buf, int z)
 {
     int w, h, x, y, zx, zy, wyoff, syoff, wi, si;
     Uint32 color;
-    unsigned char r, g, b, c;
-    Agent *agent;
+    unsigned char c;
 
     /* NOTE: assuming buf is 32-bit */
     Uint32 *pix = buf->pixels;
@@ -166,10 +165,15 @@ int main()
                     case SDLK_RETURN:
                         clientAction = ACT_HIT;
                         break;
+
+                    default:
+                        break;
                 }
                 break;
         }
     }
+
+    return 0;
 }
 
 void uiQueueDraw()
@@ -201,4 +205,6 @@ void *dataThread(void *ign)
             clientAction == ACT_BUILD)
             clientAction = ACT_NOP;
     }
+
+    return NULL;
 }

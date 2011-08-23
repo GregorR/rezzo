@@ -17,6 +17,7 @@
 #define _BSD_SOURCE /* for random */
 
 #include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -168,6 +169,9 @@ int main(int argc, char **argv)
     /* make our world */
     world = newWorld(w, h);
     randWorld(world);
+
+    /* ignore sigpipes */
+    signal(SIGPIPE, SIG_IGN);
 
     /* prepare our agents */
     agents = newAgentList(world);
