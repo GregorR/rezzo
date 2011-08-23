@@ -1,4 +1,13 @@
-(This README includes only the concepts, not the protocol for bots)
+This README describes the basic concepts of Rezzo, including the definition of
+the cellular automaton and basic ideas behind agents. The other READMEs are:
+
+ * README.simple: Read this if you've never encountered cellular automata
+   before, or otherwise want a more intuitive introduction to the underlying
+   model behind Rezzo.
+
+ * README.agents: Describes the protocol used by agents to communicate with the
+   server. Read this if you want to write Rezzo bots.
+
 
 Rezzo is a capture-the-flag game played by bots (agents) on a cellular
 automaton based on Wireworld. The CA has the following states:

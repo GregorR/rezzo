@@ -1,0 +1,260 @@
+This README is intended to give you an /intuitive/ idea for how the cellular
+automaton underlying Rezzo works. It is /not/ a replacement for the normal
+README, but it should be a more gentle introduction. This README assumes you've
+never seen a CA before (if you're familiar with e.g. Game of Life, then you're
+already doing well).
+
+
+===============================================================================
+An Introduction to 2D Cellular Automata
+===============================================================================
+
+In a 2D cellular automaton, the world is a 2-dimensional array of cells. Each
+cell is in one of several states. For instance, in the Wireworld automaton
+(which is the basis of the Rezzo automaton), there are four states: blank,
+conductor, electron, and electron tail.
+
+The state of a cell will change based on the state of all the cells in its
+neighborhood. In the case of Wireworld and Rezzo, the neighborhood is all cells
+which are one step in any direction from the cell, including diagonal
+directions. For instance, in the following arrangement, cell A will be affected
+by cells 1-8:
+
++-+-+-+
+|1|2|3|
++-+-+-+
+|4|A|5|
++-+-+-+
+|6|7|8|
++-+-+-+
+
+In each cycle of the cellular automaton, each state of every cell changes
+atomically; that is, the state transition depends only on the /original/ state
+of all surrounding cells, not the state they transition into.
+
+It is typical in cellular automata that the world is effectively infinitely
+large in all dimensions. In Rezzo, however, the world has a fixed size and
+loops at the edges. That is, if the field is of size 10x10, then the cell to
+the right of 9,5 is 0,5.
+
+
+===============================================================================
+Wireworld
+===============================================================================
+
+Wireworld is a simplistic cellular automaton intended to look somewhat like
+electronic wiring. In it, there are blank cells which never change, and wires
+which carry "current", which are cells in the "electron" state. Looking at it
+from the perspective of the whole cellular automaton (as opposed to individual
+cell transitions), the electrons move across wires. Clever arrangements of
+wires can allow computation with the electrons.
+
+To show Wireworld's behavior, the cells will be represented as the following
+ASCII characters:
+
+   (space) for blank
+ . for conductor
+ * for electron
+ _ for electron tail
+
+The following is the behavior of a single electron moving along a wire:
+----------------------------------------------------------------
+...*_
+
+..*_.
+
+.*_..
+
+*_...
+
+_....
+
+.....
+----------------------------------------------------------------
+
+Electrons may be duplicated:
+----------------------------------------------------------------
+...
+   .*_
+...
+
+...
+   *_.
+...
+
+..*
+   _..
+..*
+
+.*_
+   ...
+.*_
+
+*_.
+   ...
+*_.
+
+_..
+   ...
+_..
+
+...
+   ...
+...
+----------------------------------------------------------------
+
+Although electrons typically have tails, certain arrangements of wires may
+cause them to (briefly) be tailless, or for multiple electrons to "share" one
+tail:
+----------------------------------------------------------------
+...
+....*_
+
+...
+...*_.
+
+..*
+..*_..
+
+.*_
+.*_...
+
+*_.
+*_....
+
+_..
+_.....
+
+...
+......
+----------------------------------------------------------------
+
+Although the intuition behind Wireworld is that electrons move across wires,
+this is of course not how cellular automata work. Each state has a set of state
+transitions that present the illusion of electrons moving accross wires:
+
+ * blank always remains blank
+ * wire:
+   * if one or two neighbors are electrons, becomes an electron
+   * otherwise, remains a wire
+ * electrons always become electron tails
+ * electron tails always become wire
+
+
+===============================================================================
+Rezzo's cellular automaton
+===============================================================================
+
+Since Rezzo is a capture-the-flag game, it expands the Wireworld automaton by
+adding the following game-related states:
+
+ * photon (represented here by ~)
+ * agent (not shown)
+ * flag (represented here by F)
+ * flag geyser (represented here by ^)
+ * base (represented here by B)
+
+Unlike the Wireworld states, the agent, flag, flag geyser and base states are
+extended by having an owner. For every player there is exactly one agent cell
+on the board, which starts at a randomly-determined location next to two base
+cells and two flag geyser cells owned by that player.
+
+Agents may build or destroy conductors, but these changes are external to the
+cellular automaton itself.
+
+Conceptually, the idea is to take flags from the flag geysers, and bring them
+to your base. If an enemy flag touches your base, that enemy is removed from
+the game.
+
+Flags are not moved directly by agents, but by electrons. Electrons
+conceptually pull flags towards the electron source. When an electron hits a
+flag, it becomes a photon, and that photon then attracts the flag into its
+cell. The behavior of electrons on a flag is like so:
+----------------------------------------------------------------
+.F..*_
+
+.F.*_.
+
+.F*_.*
+
+.F~.*_
+
+..F*_.
+
+..F~.*
+
+...F*_
+----------------------------------------------------------------
+
+Flags may be duplicated:
+----------------------------------------------------------------
+  .*_
+.F
+  .*_
+
+  *_.
+.F
+  *_.
+
+  ~..
+.F
+  ~..
+
+  F..
+..
+  F..
+----------------------------------------------------------------
+
+Flag geysers act similarly to flags, but the cell a flag geyser is in never
+turns into a conductor (they're permanent):
+----------------------------------------------------------------
+.^..*_
+
+.^.*_.
+
+.^*_.*
+
+.^~.*_
+
+.^F*_.
+
+.^F~.*
+
+.^.F*_
+----------------------------------------------------------------
+
+To defeat the enemy, you must bring their flag next to your base, at which
+point all of their flags (and everything else they own) will disappear:
+----------------------------------------------------------------
+  _
+  *
+F..B
+
+  .
+  _
+F**B
+
+  *
+  .
+F~_B
+
+  _
+  *
+.F.B
+
+  .
+  ~
+.F*B
+
+  *
+  F
+.._B
+
+//victory//
+
+  _
+  *
+...B
+----------------------------------------------------------------
+
+The full list of state update rules for Rezzo is in the file README.
