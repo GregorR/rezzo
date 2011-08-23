@@ -237,7 +237,7 @@ void uiRun(AgentList *agents, void *bufvp, int z, pthread_mutex_t *lock)
                 drawWorld(agents, buf, z);
                 break;
         }
-        if (lock) pthread_mutex_lock(lock);
+        if (lock) pthread_mutex_unlock(lock);
     }
 }
 
