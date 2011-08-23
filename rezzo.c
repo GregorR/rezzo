@@ -46,7 +46,7 @@ struct _AgentThreadData {
 };
 
 static char help_text[] =
-    "Usage: rezzo [options] warrior ...\n"
+    "Usage: rezzo [options] warrior ... [-- ui-options]\n"
     "Options:\n"
     "\t-w N, -h N   Set arena size\n"
     "\t-z N         Set display zoom\n"
@@ -137,12 +137,24 @@ int main(int argc, char **argv)
             i++;
         } else ARG(-q) {
             mustTimeout = 0;
+        } else ARG(--) {
+            /* UI options */
+            break;
         } else if (arg[0] != '-') {
             WRITE_ONE_BUFFER(agentProgs, arg);
         } else {
             fprintf(stderr, "Unknown option: %s\n%s", arg, help_text);
             exit(1);
         }
+    }
+
+    if (i < argc) {
+        /* we have UI options */
+        argc -= i;
+        argv += i;
+    } else {
+        /* no UI options */
+        argc = 0;
     }
 
     if (agentProgs.bufused > MAX_AGENTS) {
@@ -196,7 +208,7 @@ int main(int argc, char **argv)
     }
 
     /* initialize the UI */
-    uibuf = uiInit(agents, w, h, z);
+    uibuf = uiInit(argc, argv, agents, w, h, z);
 
     /* and the agent thread */
     atd.agents = agents;

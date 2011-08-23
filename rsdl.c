@@ -187,9 +187,14 @@ static void initColors(SDL_Surface *buf)
 #undef ACOL
 }
 
-void *uiInit(AgentList *agents, int w, int h, int z)
+void *uiInit(int argc, char **argv, AgentList *agents, int w, int h, int z)
 {
     SDL_Surface *buf;
+
+    if (argc) {
+        fprintf(stderr, "The SDL UI takes no options.\n");
+        exit(1);
+    }
 
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0) SDLERR;
     atexit(SDL_Quit);

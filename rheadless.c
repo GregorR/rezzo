@@ -213,11 +213,16 @@ static void initColors()
 #undef ACOL
 }
 
-void *uiInit(AgentList *agents, int w, int h, int z)
+void *uiInit(int argc, char **argv, AgentList *agents, int w, int h, int z)
 {
     HeadlessBuf *buf;
     size_t sz;
     int tmpi;
+
+    if (argc) {
+        fprintf(stderr, "The headless UI takes no options.\n");
+        exit(1);
+    }
 
     sz = sizeof(HeadlessBuf) + w*h*z*z*4;
     SF(buf, malloc, NULL, (sz));

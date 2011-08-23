@@ -214,7 +214,7 @@ static void initColors()
 #undef ACOL
 }
 
-void *uiInit(AgentList *agents, int w, int h, int z)
+void *uiInit(int argc, char **argv, AgentList *agents, int w, int h, int z)
 {
     VNCBuf *buf;
     int tmpi;
@@ -226,7 +226,17 @@ void *uiInit(AgentList *agents, int w, int h, int z)
     SF(tmpi, pipe, -1, (buf->wakeup));
 
     /* then get RFB's data */
-    buf->rfb = rfbGetScreen(NULL, NULL, w*z, h*z, 8, 3, 4);
+    buf->rfb = rfbGetScreen(&argc, argv, w*z, h*z, 8, 3, 4);
+
+    if (argc > 1) {
+        rfbUsage();
+        exit(1);
+    }
+
+    /* some defaults */
+    if (!buf->rfb->neverShared) buf->rfb->alwaysShared = TRUE;
+
+    /* framebuffer info */
     SF(buf->rfb->frameBuffer, malloc, NULL, (w*h*z*z*4));
     rfbSetCursor(buf->rfb, NULL);
 

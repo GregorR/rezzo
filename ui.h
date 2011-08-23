@@ -22,7 +22,7 @@ extern unsigned long frame;
 
 void drawWorld(AgentList *agents, void *bufvp, int z);
 
-void *uiInit(AgentList *agents, int w, int h, int z);
+void *uiInit(int argc, char **argv, AgentList *agents, int w, int h, int z);
 
 void uiRun(AgentList *agents, void *bufvp, int z, pthread_mutex_t *lock);
 
