@@ -228,6 +228,7 @@ void *uiInit(AgentList *agents, int w, int h, int z)
     /* then get RFB's data */
     buf->rfb = rfbGetScreen(NULL, NULL, w*z, h*z, 8, 3, 4);
     SF(buf->rfb->frameBuffer, malloc, NULL, (w*h*z*z*4));
+    rfbSetCursor(buf->rfb, NULL);
 
     initColors();
     drawWorld(agents, buf, z);
