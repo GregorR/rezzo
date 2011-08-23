@@ -191,22 +191,6 @@ static void initColors()
     SF(typeColors[2], malloc, NULL, (256));
     memset(typeColors[2], 0, 256);
 
-#define COL(c, r, g, b) do { \
-    typeColors[0][CELL_ ## c] = r; \
-    typeColors[1][CELL_ ## c] = g; \
-    typeColors[2][CELL_ ## c] = b; \
-} while (0)
-    COL(NONE, 0, 0, 0);
-    COL(CONDUCTOR, 127, 127, 127);
-    COL(ELECTRON, 255, 255, 0);
-    COL(ELECTRON_TAIL, 64, 64, 0);
-
-    /* these will all be colored by the player-coloring step */
-    COL(AGENT, 255, 255, 255);
-    COL(FLAG_GEYSER, 255, 255, 255);
-    COL(BASE, 255, 255, 255);
-#undef COL
-
     SF(ownerColors[0], malloc, NULL, (256));
     memset(ownerColors[0], 0, 256);
     SF(ownerColors[1], malloc, NULL, (256));
@@ -214,22 +198,19 @@ static void initColors()
     SF(ownerColors[2], malloc, NULL, (256));
     memset(ownerColors[2], 0, 256);
 
-#define COL(c, r, g, b) do { \
+#define TCOL(c, r, g, b) do { \
+    typeColors[0][c] = r; \
+    typeColors[1][c] = g; \
+    typeColors[2][c] = b; \
+} while (0)
+#define ACOL(c, r, g, b) do { \
     ownerColors[0][c] = r; \
     ownerColors[1][c] = g; \
     ownerColors[2][c] = b; \
 } while (0)
-    COL(1, 255, 0, 0); /* red */
-    COL(2, 64, 64, 255); /* blue */
-    COL(3, 0, 255, 0); /* green */
-    COL(4, 255, 127, 0); /* orange */
-    COL(5, 255, 0, 255); /* magenta */
-    COL(6, 0, 255, 255); /* cyan */
-    COL(7, 163, 109, 122); /* puce */
-    COL(8, 0, 102, 102); /* teal */
-    COL(9, 102, 0, 102); /* purple */
-    COL(10, 255, 255, 255); /* grey (bleh) */
-#undef COL
+#include "colors.h"
+#undef TCOL
+#undef ACOL
 }
 
 void *uiInit(AgentList *agents, int w, int h, int z)
