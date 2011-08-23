@@ -5,10 +5,17 @@ LDFLAGS=
 UI=sdl
 
 CLIBFLAGS=
-LIBS=
+LIBS=-pthread
 ifeq ($(UI),sdl)
 CLIBFLAGS+=`sdl-config --cflags` `pkg-config --cflags libpng`
 LIBS+=`sdl-config --libs` `pkg-config --libs libpng`
+
+else
+ifeq ($(UI),headless)
+CLIBFLAGS+=`pkg-config --cflags libpng`
+LIBS+=`pkg-config --libs libpng`
+
+endif
 endif
 
 OBJS=agent.o ca.o rezzo.o r$(UI).o
@@ -24,7 +31,7 @@ rezzo: $(OBJS)
 	$(CC) $(CFLAGS) $(CLIBFLAGS) -c $<
 
 clean:
-	rm -f $(OBJS) rezzo
+	rm -f *.o rezzo
 	rm -f deps
 
 -include deps

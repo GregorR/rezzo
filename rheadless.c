@@ -14,32 +14,44 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <png.h>
-#include <SDL.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
+#include <png.h>
 #include <pthread.h>
+
+#ifndef __WIN32
+#include <alloca.h>
+#else
+#include <malloc.h>
+#endif
 
 #include "agent.h"
 #include "ca.h"
+#include "helpers.h"
 #include "ui.h"
 
-#define SDLERR do { \
-    fprintf(stderr, "%s\n", SDL_GetError()); \
-    exit(1); \
-} while (0)
+typedef struct _HeadlessBuf HeadlessBuf;
+struct _HeadlessBuf {
+    unsigned int w, h;
+    int wakeup[2];
+    unsigned char pix[1];
+};
 
+/* global state */
 char *video = NULL;
 unsigned long frame = 0;
-static Uint32 *typeColors, *ownerColors32;
+static unsigned char *typeColors[3];
 static unsigned char *ownerColors[3];
 
 static void drawSpot(World *world, void *bufvp, int x, int y, int z,
                      unsigned char r, unsigned char g, unsigned char b)
 {
-    SDL_Surface *buf = bufvp;
-    SDL_PixelFormat *fmt = buf->format;
+    HeadlessBuf *buf = bufvp;
     int zx, zy, i, yoff, zi;
-    Uint32 *pix;
+    unsigned char *pix;
     unsigned char or, og, ob, nr, ng, nb;
 
     while (x < 0) x += world->w;
@@ -47,45 +59,54 @@ static void drawSpot(World *world, void *bufvp, int x, int y, int z,
     while (y < 0) y += world->h;
     while (y >= world->h) y -= world->h;
 
+    pix = buf->pix;
     i = y*z*buf->w + x*z;
-    pix = buf->pixels;
 
-    for (zy = 0, yoff = i; zy < z; zy++, yoff += buf->w) {
-        for (zx = 0, zi = yoff; zx < z; zx++, zi++) {
-            SDL_GetRGB(pix[zi], fmt, &or, &og, &ob);
+    for (zy = 0, yoff = i; zy < z; zy++, yoff += buf->w*4) {
+        for (zx = 0, zi = yoff; zx < z; zx++, zi += 4) {
+            or = pix[zi];
+            og = pix[zi+1];
+            ob = pix[zi+2];
             nr = (((int) r)*2 + (int) or) / 3;
             ng = (((int) g)*2 + (int) og) / 3;
             nb = (((int) b)*2 + (int) ob) / 3;
-            pix[zi] = SDL_MapRGB(fmt, nr, ng, nb);
+            pix[zi] = nr;
+            pix[zi+1] = ng;
+            pix[zi+2] = nb;
         }
     }
 }
 
 void drawWorld(AgentList *agents, void *bufvp, int z)
 {
-    SDL_Surface *buf = bufvp;
+    HeadlessBuf *buf = bufvp;
     World *world = agents->world;
     int w, h, x, y, zx, zy, wyoff, syoff, wi, si;
-    Uint32 color;
     unsigned char r, g, b;
     Agent *agent;
+    unsigned char *pix = buf->pix;
 
-    /* NOTE: assuming buf is 32-bit */
-    Uint32 *pix = buf->pixels;
+    if (!video) return;
 
     /* draw the substrate */
     w = world->w;
     h = world->h;
-    for (y = 0, wyoff = 0, syoff = 0; y < h; y++, wyoff += w, syoff += w*z*z) {
-        for (x = 0, wi = wyoff, si = syoff; x < w; x++, wi++, si += z) {
+    for (y = 0, wyoff = 0, syoff = 0; y < h; y++, wyoff += w, syoff += w*z*z*4) {
+        for (x = 0, wi = wyoff, si = syoff; x < w; x++, wi++, si += z*4) {
             if (world->c[wi] == CELL_FLAG) {
-                color = ownerColors32[world->owner[wi]];
+                r = ownerColors[0][world->owner[wi]];
+                g = ownerColors[1][world->owner[wi]];
+                b = ownerColors[2][world->owner[wi]];
             } else {
-                color = typeColors[world->c[wi]];
+                r = typeColors[0][world->c[wi]];
+                g = typeColors[1][world->c[wi]];
+                b = typeColors[2][world->c[wi]];
             }
             for (zy = 0; zy < z; zy++) {
                 for (zx = 0; zx < z; zx++) {
-                    pix[si+w*z*zy+zx] = color;
+                    pix[si+w*z*zy*4+zx*4] = r;
+                    pix[si+w*z*zy*4+zx*4+1] = g;
+                    pix[si+w*z*zy*4+zx*4+2] = b;
                 }
             }
         }
@@ -118,10 +139,8 @@ void drawWorld(AgentList *agents, void *bufvp, int z)
         }
     }
 
-    SDL_UpdateRect(buf, 0, 0, buf->w, buf->h);
-
     /* maybe write it out */
-    if (video) {
+    {
         FILE *fout = NULL;
         png_structp png = NULL;
         png_infop pngi = NULL;
@@ -149,13 +168,13 @@ void drawWorld(AgentList *agents, void *bufvp, int z)
 
         /* set up the row pointers */
         rowptrs = alloca(buf->h * sizeof(png_byte *));
-        for (y = 0, x = 0; y < buf->h; y++, x += buf->pitch) {
+        for (y = 0, x = 0; y < buf->h; y++, x += buf->w * z * 4) {
             rowptrs[y] = (png_byte *) pix + x;
         }
         png_set_rows(png, pngi, rowptrs);
 
         /* then write it out (FIXME: assuming little-endian, which needs to be swapped) */
-        png_write_png(png, pngi, PNG_TRANSFORM_BGR, NULL);
+        png_write_png(png, pngi, PNG_TRANSFORM_IDENTITY, NULL);
 
 pngFail:
         if (png) png_destroy_write_struct(&png, pngi ? &pngi : NULL);
@@ -163,14 +182,20 @@ pngFail:
     }
 }
 
-static void initColors(SDL_Surface *buf)
+static void initColors()
 {
-    SDL_PixelFormat *fmt = buf->format;
+    SF(typeColors[0], malloc, NULL, (256));
+    memset(typeColors[0], 0, 256);
+    SF(typeColors[1], malloc, NULL, (256));
+    memset(typeColors[1], 0, 256);
+    SF(typeColors[2], malloc, NULL, (256));
+    memset(typeColors[2], 0, 256);
 
-    SF(typeColors, malloc, NULL, (sizeof(Uint32)*256));
-    memset(typeColors, 0, sizeof(Uint32)*256);
-
-#define COL(c, r, g, b) typeColors[CELL_ ## c] = SDL_MapRGB(fmt, r, g, b)
+#define COL(c, r, g, b) do { \
+    typeColors[0][CELL_ ## c] = r; \
+    typeColors[1][CELL_ ## c] = g; \
+    typeColors[2][CELL_ ## c] = b; \
+} while (0)
     COL(NONE, 0, 0, 0);
     COL(CONDUCTOR, 127, 127, 127);
     COL(ELECTRON, 255, 255, 0);
@@ -182,16 +207,17 @@ static void initColors(SDL_Surface *buf)
     COL(BASE, 255, 255, 255);
 #undef COL
 
-    SF(ownerColors[0], malloc, NULL, (MAX_AGENTS+1));
-    SF(ownerColors[1], malloc, NULL, (MAX_AGENTS+1));
-    SF(ownerColors[2], malloc, NULL, (MAX_AGENTS+1));
-    SF(ownerColors32, malloc, NULL, (sizeof(Uint32)*(MAX_AGENTS+1)));
+    SF(ownerColors[0], malloc, NULL, (256));
+    memset(ownerColors[0], 0, 256);
+    SF(ownerColors[1], malloc, NULL, (256));
+    memset(ownerColors[1], 0, 256);
+    SF(ownerColors[2], malloc, NULL, (256));
+    memset(ownerColors[2], 0, 256);
 
 #define COL(c, r, g, b) do { \
     ownerColors[0][c] = r; \
     ownerColors[1][c] = g; \
     ownerColors[2][c] = b; \
-    ownerColors32[c] = SDL_MapRGB(fmt, r, g, b); \
 } while (0)
     COL(1, 255, 0, 0); /* red */
     COL(2, 64, 64, 255); /* blue */
@@ -208,14 +234,18 @@ static void initColors(SDL_Surface *buf)
 
 void *uiInit(AgentList *agents, int w, int h, int z)
 {
-    SDL_Surface *buf;
+    HeadlessBuf *buf;
+    size_t sz;
+    int tmpi;
 
-    if (SDL_Init(SDL_INIT_EVERYTHING) < 0) SDLERR;
-    atexit(SDL_Quit);
-    if ((buf = SDL_SetVideoMode(w*z, h*z, 32, SDL_SWSURFACE|SDL_DOUBLEBUF)) == NULL) SDLERR;
-    SDL_WM_SetCaption("Rezzo", "Rezzo");
+    sz = sizeof(HeadlessBuf) + w*h*z*z*4;
+    SF(buf, malloc, NULL, (sz));
+    memset(buf, -1, sz);
+    buf->w = w;
+    buf->h = h;
+    SF(tmpi, pipe, -1, (buf->wakeup));
 
-    initColors(buf);
+    initColors();
     drawWorld(agents, buf, z);
 
     return (void *) buf;
@@ -223,31 +253,19 @@ void *uiInit(AgentList *agents, int w, int h, int z)
 
 void uiRun(AgentList *agents, void *bufvp, int z, pthread_mutex_t *lock)
 {
-    SDL_Surface *buf = bufvp;
-    SDL_Event ev;
+    HeadlessBuf *buf = bufvp;
+    char junk;
 
-    while (SDL_WaitEvent(&ev)) {
+    while (read(buf->wakeup[0], &junk, 1) == 1) {
         if (lock) pthread_mutex_lock(lock);
-        switch (ev.type) {
-            case SDL_QUIT:
-                exit(0);
-                break;
-
-            case SDL_USEREVENT:
-                drawWorld(agents, buf, z);
-                break;
-        }
+        drawWorld(agents, buf, z);
         if (lock) pthread_mutex_unlock(lock);
     }
 }
 
 void uiQueueDraw(void *bufvp)
 {
-    SDL_Event ev;
-
-    ev.type = SDL_USEREVENT;
-    ev.user.code = (int) 'f';
-    ev.user.data1 = ev.user.data2 = NULL;
-
-    SDL_PushEvent(&ev);
+    HeadlessBuf *buf = bufvp;
+    ssize_t tmpi;
+    SF(tmpi, write, -1, (buf->wakeup[1], "w", 1));
 }

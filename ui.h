@@ -26,6 +26,6 @@ void *uiInit(AgentList *agents, int w, int h, int z);
 
 void uiRun(AgentList *agents, void *bufvp, int z, pthread_mutex_t *lock);
 
-void uiQueueDraw();
+void uiQueueDraw(void *bufvp);
 
 #endif

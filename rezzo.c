@@ -38,6 +38,13 @@ BUFFER(charp, char *);
 static int useLocks;
 static int timeout, mustTimeout;
 
+/* info for the agent thread */
+typedef struct _AgentThreadData AgentThreadData;
+struct _AgentThreadData {
+    AgentList *agents;
+    void *ui;
+};
+
 static char help_text[] =
     "Usage: rezzo [options] warrior ...\n"
     "Options:\n"
@@ -74,7 +81,7 @@ void nonblocking(int fd)
     SF(tmpi, fcntl, -1, (fd, F_SETFL, flags | O_NONBLOCK));
 }
 
-void *agentThread(void *agentsvp);
+void *agentThread(void *datavp);
 pthread_mutex_t bigLock;
 
 int main(int argc, char **argv)
@@ -86,6 +93,7 @@ int main(int argc, char **argv)
     AgentList *agents;
     struct Buffer_charp agentProgs;
     pthread_t agentPThread;
+    AgentThreadData atd;
 
     /* defaults */
     useLocks = 0;
@@ -187,12 +195,14 @@ int main(int argc, char **argv)
         agentServerMessage(newAgent(agents, pid, rpipe[0], wpipe[1]));
     }
 
-    /* and the agent thread */
-    pthread_mutex_init(&bigLock, NULL);
-    pthread_create(&agentPThread, NULL, agentThread, agents);
-
     /* initialize the UI */
     uibuf = uiInit(agents, w, h, z);
+
+    /* and the agent thread */
+    atd.agents = agents;
+    atd.ui = uibuf;
+    pthread_mutex_init(&bigLock, NULL);
+    pthread_create(&agentPThread, NULL, agentThread, &atd);
 
     /* then do the UI's loop */
     uiRun(agents, uibuf, z, useLocks ? &bigLock : NULL);
@@ -221,9 +231,11 @@ static void tvadd(struct timeval *into, struct timeval a, long usec)
     }
 }
 
-void *agentThread(void *agentsvp)
+void *agentThread(void *data)
 {
-    AgentList *agents = agentsvp;
+    AgentThreadData *atd = data;
+    AgentList *agents = atd->agents;
+    void *ui = atd->ui;
     Agent *agent;
     int nfds = 0, allDone, sr;
     struct timeval cur, next, tv;
@@ -275,7 +287,7 @@ void *agentThread(void *agentsvp)
         /* and maybe do a world step */
         if (allDone) {
             tick(agents);
-            uiQueueDraw();
+            uiQueueDraw(ui);
 
             /* how shall we proceed? */
             if (sr > 0) {
