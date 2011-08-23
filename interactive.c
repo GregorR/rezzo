@@ -119,7 +119,7 @@ int main()
 {
     SDL_Surface *buf;
     SDL_Event ev;
-    int z = 20;
+    int z = 40;
     pthread_t th;
 
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0) SDLERR;
