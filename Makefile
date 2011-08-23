@@ -4,7 +4,7 @@ CLIBFLAGS=`sdl-config --cflags` `pkg-config --cflags libpng`
 LDFLAGS=
 LIBS=`sdl-config --libs` `pkg-config --libs libpng`
 
-OBJS=agent.o ca.o rezzo.o
+OBJS=agent.o ca.o rezzo.o rsdl.o
 
 all: rezzo
 
