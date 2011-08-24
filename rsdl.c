@@ -32,6 +32,7 @@ char *video = NULL;
 unsigned long frame = 0;
 static Uint32 *typeColors, *ownerColors32;
 static unsigned char *ownerColors[3];
+int ready = 1;
 
 static void drawSpot(World *world, void *bufvp, int x, int y, int z,
                      unsigned char r, unsigned char g, unsigned char b)
@@ -161,6 +162,8 @@ pngFail:
         if (png) png_destroy_write_struct(&png, pngi ? &pngi : NULL);
         fclose(fout);
     }
+
+    ready = 1;
 }
 
 static void initColors(SDL_Surface *buf)
@@ -229,11 +232,15 @@ void uiRun(AgentList *agents, void *bufvp, int z, pthread_mutex_t *lock)
 
 void uiQueueDraw(void *bufvp)
 {
-    SDL_Event ev;
+    if (ready) {
+        SDL_Event ev;
 
-    ev.type = SDL_USEREVENT;
-    ev.user.code = (int) 'f';
-    ev.user.data1 = ev.user.data2 = NULL;
+        ev.type = SDL_USEREVENT;
+        ev.user.code = (int) 'f';
+        ev.user.data1 = ev.user.data2 = NULL;
 
-    SDL_PushEvent(&ev);
+        SDL_PushEvent(&ev);
+
+        ready = 0;
+    }
 }
