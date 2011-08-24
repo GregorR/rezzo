@@ -137,6 +137,7 @@ int main(int argc, char **argv)
             timeout = atoi(nextarg) * 1000;
             i++;
         } else ARG(-q) {
+            useLocks = 1;
             mustTimeout = 0;
         } else ARG(--) {
             /* UI options */
