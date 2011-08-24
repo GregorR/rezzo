@@ -273,7 +273,7 @@ static void agentClientMessage(Agent *agent, ClientMessage *cm)
                 ack = ACK_INVALID_ACTION;
             } else {
                 world->damage[ni]++;
-                if (world->damage[ni] >= 4) {
+                if (world->damage[ni] >= CELL_DESTROY_DAMAGE) {
                     /* DESTROY! EXTERMINATE! */
                     world->c[ni] = CELL_NONE;
                     world->damage[ni] = 0;
