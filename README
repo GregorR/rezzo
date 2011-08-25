@@ -34,7 +34,8 @@ surrounding the given cell (eight neighbors). The transitions are:
    * if one or two neighbors are electrons, -> electron
    * else, -> conductor
  * electron:
-   * if one or more neighbor is a flag or flag geyser, -> photon
+   * if one or more neighbor is a flag or flag geyser and one or more neighbor
+     is an electron tail, -> photon
    * else, -> electron tail
  * electron tail -> conductor
  * photon:

@@ -210,12 +210,14 @@ void updateCell(World *world, int x, int y, unsigned char *c, unsigned char *own
             *c = CELL_ELECTRON;
 
     } else if (self == CELL_ELECTRON) {
-        /* check neighborhood for flags */
+        /* check neighborhood for flags and tails */
         unsigned char flags = 0;
+        unsigned char tails = 0;
         for (i = 0; i < 9; i++) {
             if (ncs[i] == CELL_FLAG || ncs[i] == CELL_FLAG_GEYSER) flags++;
+            else if (ncs[i] == CELL_ELECTRON_TAIL) tails++;
         }
-        if (flags) {
+        if (flags && tails) {
             /* become a photon */
             *c = CELL_PHOTON;
         } else {
