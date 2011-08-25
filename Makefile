@@ -51,4 +51,4 @@ clean:
 -include deps
 
 deps:
-	$(CC) -MM *.c > deps || echo > deps
+	for i in *.c; do $(CC) -MM $(CLIBFLAGS) $$i; done > deps 2> /dev/null || echo > deps
