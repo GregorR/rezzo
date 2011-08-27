@@ -17,6 +17,11 @@
 #ifndef RSDL_H
 #define RSDL_H
 
+#ifdef REZZO_SDL
+/* unforunately we need to include this here, because main is sometimes changed to SDL_main */
+#include <SDL.h>
+#endif
+
 extern char *video;
 extern unsigned long frame;
 

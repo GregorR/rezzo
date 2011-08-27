@@ -8,7 +8,7 @@ CLIBFLAGS=
 LIBS=-pthread
 
 ifeq ($(UI),sdl)
-CLIBFLAGS+=`sdl-config --cflags` `pkg-config --cflags libpng` -Dmain=SDL_main
+CLIBFLAGS+=`sdl-config --cflags` `pkg-config --cflags libpng` -DREZZO_SDL
 LIBS+=`sdl-config --libs` `pkg-config --libs libpng`
 
 else
